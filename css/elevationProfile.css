@@ -1,0 +1,136 @@
+/* 
+=================================================
+  ELEVATION PROFILE TOOL STYLES
+=================================================
+*/
+
+/* Tlačítko v mapě (pod Street View) */
+.elevation-profile-btn-standalone {
+    margin-top: 10px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    background: #fff;
+    border-radius: 4px;
+}
+
+.leaflet-control-elevation-toggle {
+    background-color: #fff;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333333;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    font-size: 16px;
+}
+
+.leaflet-control-elevation-toggle:hover {
+    background-color: #f4f4f4;
+    color: var(--accent, #50c878);
+}
+
+.leaflet-control-elevation-toggle.active,
+.leaflet-control-elevation-toggle.active:hover {
+    background-color: var(--accent, #50c878) !important;
+    color: #fff !important;
+}
+
+/* Informační panely ve vrstvě Analýzy */
+.elevation-profile-idle,
+.elevation-profile-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 20px;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.elevation-profile-idle p,
+.elevation-profile-loading p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Statistiky - mřížka nahoře nad grafem */
+.elevation-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background-color: #fcfcfc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    padding: 6px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 700;
+    margin-bottom: 2px;
+    letter-spacing: 0.02em;
+}
+
+.stat-value {
+    font-size: 13px;
+    font-weight: 800;
+    color: #222;
+}
+
+/* Kontejner pro Chart.js canvas */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.elevation-profile-container {
+    display: flex;
+    flex-direction: column;
+}

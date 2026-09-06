@@ -1,0 +1,340 @@
+/* ============================================================
+   INFO PAGE STYLES
+============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --text: #ffffff;
+    --text-light: #e0e0e0;
+    --accent: #368c54;
+    --accent-light: #62d488;
+    --accent-bg: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text);
+    background-color: var(--accent);
+    background-image: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent 50%),
+                      radial-gradient(circle at bottom left, rgba(255,255,255,0.05), transparent 50%);
+    background-attachment: fixed;
+    /* Pevná stránka - scrollovat bude jen levý panel s texty */
+    overflow: hidden;
+}
+
+/* Celkový kontejner bez výškového omezení */
+.info-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* LEVÁ STRANA - TEXTY */
+.info-content {
+    flex: 1.2;
+    min-width: 0; /* WebKit fix */
+    max-width: 60%; /* Fix for taking whole screen */
+    padding: 60px 80px;
+    display: flex;
+    flex-direction: column;
+    /* Scrollování pouze vlevo */
+    overflow-y: auto;
+    height: 100vh;
+    /* Skrytí scrollbaru levého panelu pro čistý vzhled */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.info-content::-webkit-scrollbar {
+    display: none;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: max-content;
+    margin-bottom: 40px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.info-header h1 {
+    font-size: 42px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.info-header p {
+    font-size: 18px;
+    color: var(--text-light);
+    margin-bottom: 40px;
+    line-height: 1.5;
+}
+
+.help-section {
+    margin-top: 20px;
+}
+
+.help-section h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.feature-icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.feature-text h3 {
+    font-size: 15px;
+    margin-bottom: 2px;
+    color: #fff;
+}
+
+.feature-text p {
+    font-size: 14px;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+
+/* PRAVÁ STRANA - LOGO A CAROUSEL (Sticky) */
+.info-visual {
+    flex: 0.8;
+    min-width: 0;
+    max-width: 40%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    overflow: hidden;
+    padding: 30px 20px;
+}
+
+.logo-wrapper {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: float 10s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.outer-frame {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+    backdrop-filter: blur(8px);
+    transition: transform 0.1s ease-out;
+}
+
+.inner-frame {
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 0 50px rgba(54, 140, 84, 0.2);
+    transition: transform 0.1s ease-out;
+}
+
+.big-brand-logo {
+    width: 220px;
+    height: 220px;
+    border: 12px solid rgba(255, 255, 255, 0.9);
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 30px 60px rgba(80, 0, 0, 0.4), inset 0 0 50px rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+    backdrop-filter: blur(12px);
+    transition: transform 0.1s ease-out;
+    flex-shrink: 0;
+}
+
+.brand-logo-dot {
+    position: absolute;
+    width: 35%;
+    height: 35%;
+    border-radius: 50%;
+    background: #ffffff;
+    /* Výchozí bod pro JS */
+    top: 15%;
+    left: 15%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 30px rgba(255,255,255,1), 0 0 80px rgba(255,255,255,0.5);
+    transition: left 0.1s ease-out, top 0.1s ease-out, transform 0.1s ease-out;
+}
+
+/* Map Carousel Container */
+.map-carousel-container {
+    width: 100%;
+    max-width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 16px 0;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 15;
+}
+
+.map-carousel-container h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #fff;
+    margin: 0 20px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.carousel-track-wrapper {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, white 15%, white 85%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, white 15%, white 85%, transparent);
+}
+
+.carousel-track {
+    display: flex;
+    gap: 15px;
+    width: max-content;
+    padding: 10px 20px;
+    animation: scroll-carousel 22s linear infinite;
+}
+
+.carousel-track:hover {
+    animation-play-state: paused;
+}
+
+.carousel-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 110px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    padding: 6px;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    transition: transform 0.3s ease;
+}
+
+.carousel-item span {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 6px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.carousel-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-item:hover img {
+    transform: scale(1.02);
+}
+
+@keyframes scroll-carousel {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        /* 7 unique items * (110px width + 15px gap) = 875px total offset */
+        transform: translateX(-875px);
+    }
+}
+
+/* Skrytí nativního scrollbaru */
+::-webkit-scrollbar { display: none; }
+body { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Responzivita */
+@media (max-width: 992px) {
+    .info-container { flex-direction: column-reverse; height: auto; overflow: auto; }
+    .info-content { padding: 40px 30px; height: auto; overflow: visible; }
+    .info-visual { position: relative; height: auto; overflow: hidden; padding: 40px 20px 20px; gap: 30px; }
+    .logo-wrapper { width: 300px; height: 300px; }
+    .outer-frame { width: 350px; height: 350px; }
+    .inner-frame { width: 250px; height: 250px; }
+    .big-brand-logo { width: 150px; height: 150px; border-width: 8px; }
+}

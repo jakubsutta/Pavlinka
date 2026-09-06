@@ -1,0 +1,79 @@
+/* ========================
+   Formulář
+======================== */
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--accent);
+}
+
+.form-group input:not([type="range"]):not([type="radio"]):not([type="checkbox"]),
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:not([type="range"]):not([type="radio"]):not([type="checkbox"]):focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: var(--accent);
+}
+
+.form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+button {
+    padding: 7px 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    font-size: 12px;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.btn-primary {
+    background: #bdf5be;
+    color: #257126;
+    border: 1px solid #257126;
+    border-radius: 4px;
+    flex: 1;
+}
+
+.btn-danger {
+    color: #a6110b;
+    background: #f3b8b6;
+    border: 1px solid #a6110b;
+    border-radius: 4px;
+}
+
+.btn-secondary {
+    background: var(--accent-light);
+    color: var(--accent);
+    margin-bottom: 12px;
+    width: 100%;
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+}

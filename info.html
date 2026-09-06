@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pavlínka - Informace o aplikaci</title>
+
+  <!-- Favicon (SVG logo) -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' fill='none' stroke='#62d488' stroke-width='8'/><circle cx='35' cy='65' r='15' fill='rgb(54, 140, 84)'/></svg>">
+
+  <!-- Ikony Phosphor -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Styly pro Info stránku -->
+  <link rel="stylesheet" href="css/info.css">
+</head>
+
+<body>
+  <div class="info-container">
+
+    <!-- LEVÁ STRANA: Text a nápověda -->
+    <div class="info-content">
+
+      <!-- Tlačítko zpět do mapy -->
+      <a href="index.html" class="back-btn">
+        <i class="ph ph-arrow-left"></i> Zpět na mapu
+      </a>
+
+      <div class="info-header">
+        <h1>Pavlínka v 1.0</h1>
+        <p>
+          Pavlínka je moderní GIS aplikace navržená pro efektivní prohlížení, analýzu a správu prostorových dat.
+          Spojuje data z katastru nemovitostí, inženýrských sítí a historických mapových podkladů do jednoho
+          intuitivního rozhraní.
+        </p>
+      </div>
+
+      <div class="help-section" style="margin-bottom: 30px;">
+        <!-- Carousel podkladových map -->
+      <div class="map-carousel-container">
+        <h3>Podkladové mapy</h3>
+        <div class="carousel-track-wrapper">
+          <div class="carousel-track">
+            <div class="carousel-item">
+              <img src="img/cuzk_orto.png" alt="Ortofoto ČÚZK">
+              <span>Ortofoto ČÚZK</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/cesium_3d.png" alt="3D model Cesium">
+              <span>3D model Cesium</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/vojII.png" alt="II. vojenské mapování">
+              <span>II. vojenské mapování</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/cisar.png" alt="Císařské otisky">
+              <span>Císařské otisky</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/orto50.png" alt="Letecké snímky 50. léta">
+              <span>50. léta</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/google_sat.png" alt="Google Satelitní">
+              <span>Google Satelitní</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/dmp.png" alt="Digitální model povrchu">
+              <span>Model povrchu</span>
+            </div>
+            
+            <!-- Duplicita pro plynulý nekonečný přechod -->
+            <div class="carousel-item">
+              <img src="img/cuzk_orto.png" alt="Ortofoto ČÚZK">
+              <span>Ortofoto ČÚZK</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/cesium_3d.png" alt="3D model Cesium">
+              <span>3D model Cesium</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/vojII.png" alt="II. vojenské mapování">
+              <span>II. vojenské mapování</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/cisar.png" alt="Císařské otisky">
+              <span>Císařské otisky</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/orto50.png" alt="Letecké snímky 50. léta">
+              <span>50. léta</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/google_sat.png" alt="Google Satelitní">
+              <span>Google Satelitní</span>
+            </div>
+            <div class="carousel-item">
+              <img src="img/dmp.png" alt="Digitální model povrchu">
+              <span>Model povrchu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+      <div class="help-section">
+        <h2>Jak aplikaci používat?</h2>
+
+        <div class="feature-list">
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-cube"></i></div>
+            <div class="feature-text">
+              <h3>3D vizualizace a model terénu</h3>
+              <p>Přepněte do 3D a prozkoumejte krajinu včetně detailních modelů budov a terénu.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-stack"></i></div>
+            <div class="feature-text">
+              <h3>Bohaté mapové podklady</h3>
+              <p>Plynulé přepínání mezi leteckými snímky, historickými mapami a výškovými modely.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-magnifying-glass"></i></div>
+            <div class="feature-text">
+              <h3>Rychlé vyhledávání RUIAN</h3>
+              <p>Okamžité hledání adres, parcel a obcí s automatickým přiblížením.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-ruler"></i></div>
+            <div class="feature-text">
+              <h3>Měření v mapě</h3>
+              <p>Nástroje pro přesné zjištění vzdáleností, obvodů a ploch v mapě.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-printer"></i></div>
+            <div class="feature-text">
+              <h3>Tisk a export výstupů</h3>
+              <p>Export mapy do PDF s možností volby měřítka, legendy a souřadnic.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-pencil-line"></i></div>
+            <div class="feature-text">
+              <h3>Vlastní zákresy a poznámky</h3>
+              <p>Kreslení bodů a polygonů do mapy. Zákresy zůstávají trvale uloženy v prohlížeči.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-database"></i></div>
+            <div class="feature-text">
+              <h3>Tabulka dat a detailní info</h3>
+              <p>Interaktivní tabulka pro filtrování a zobrazení detailních informací o objektech.</p>
+            </div>
+          </div>
+
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-map-trifold"></i></div>
+            <div class="feature-text">
+              <h3>Interaktivní katastr a rozměry</h3>
+              <p>Rychlá identifikace parcel a zobrazení rozměrů hranic jedním kliknutím.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-mountains"></i></div>
+            <div class="feature-text">
+              <h3>Analýza viditelnosti a výškový profil</h3>
+              <p>Tvorba výškových profilů a výpočet viditelnosti z libovolného bodu.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-clock-counter-clockwise"></i></div>
+            <div class="feature-text">
+              <h3>Časová osa ortofotomap</h3>
+              <p>Posuvník pro plynulé srovnávání archivních ortofotomap z let 1998–2022.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon"><i class="ph ph-globe-hemisphere-west"></i></div>
+            <div class="feature-text">
+              <h3>Aplikace Státy (MapEurope)</h3>
+              <p>Samostatný modul <a href="states.html" style="color:var(--accent); font-weight:bold; text-decoration:none;">Státy</a> pro vizualizaci procestovaných zemí a vedení statistik.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
+
+    <!-- PRAVÁ STRANA: Dynamické Logo a Přehled podkladových map -->
+    <div class="info-visual">
+      <div class="logo-wrapper">
+        <div class="outer-frame"></div>
+        <div class="inner-frame"></div>
+        <div class="big-brand-logo">
+          <div class="brand-logo-dot"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // JS pro dynamické logo reagující na scrollování (Čisté 2D, více vrstev)
+    const dot = document.querySelector('.brand-logo-dot');
+    const innerFrame = document.querySelector('.inner-frame');
+    const outerFrame = document.querySelector('.outer-frame');
+    const mainLogo = document.querySelector('.big-brand-logo');
+    const infoContent = document.querySelector('.info-content'); // Levá strana, která scroluje
+
+    infoContent.addEventListener('scroll', () => {
+      const scrollY = infoContent.scrollTop;
+      const maxScroll = infoContent.scrollHeight - infoContent.clientHeight;
+      let scrollPercent = maxScroll > 0 ? scrollY / maxScroll : 0;
+
+      // Pohyb kuličky zleva nahoře -> doprava dolů
+      const minPos = 15;
+      const maxPos = 85;
+      const pos = minPos + (maxPos - minPos) * scrollPercent;
+
+      if (dot) {
+        dot.style.left = pos + '%';
+        dot.style.top = pos + '%';
+        const rotation = scrollPercent * 360;
+        dot.style.transform = `translate(-50%, -50%) rotate(${rotation * 2}deg)`;
+      }
+
+      // Parallax dekorativních vrstev
+      if (innerFrame) {
+        innerFrame.style.transform = `rotate(${scrollPercent * 180}deg) scale(${1 + scrollPercent * 0.1})`;
+      }
+      if (outerFrame) {
+        outerFrame.style.transform = `rotate(${-scrollPercent * 90}deg) scale(${1 - scrollPercent * 0.05})`;
+      }
+
+      // Čistý a jednoduchý parallax samotného loga (pohyb po ose Y)
+      if (mainLogo) {
+        const parallaxY = (scrollPercent - 0.5) * -60;
+        mainLogo.style.transform = `translateY(${parallaxY}px)`;
+      }
+    });
+  </script>
+</body>
+
+</html>

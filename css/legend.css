@@ -1,0 +1,161 @@
+/* ========================
+   Legenda
+======================== */
+.legend-btn {
+    flex-shrink: 0 !important;
+    padding: 0 2px !important;
+    background-color: transparent !important;
+    border: none !important;
+    margin-left: 2px !important;
+}
+
+.zoom-to-layer-btn {
+    flex-shrink: 0 !important;
+    padding: 0 2px !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+.zoom-to-layer-btn i {
+    color: #bbb !important;
+    font-size: 14px;
+    transition: color 0.2s, transform 0.2s;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+}
+
+.zoom-to-layer-btn:hover i {
+    color: var(--accent) !important;
+    transform: scale(1.2);
+}
+
+.legend-btn i {
+    color: #bbb !important;
+    font-size: 14px;
+    transition: color 0.2s, transform 0.3s;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+}
+
+.legend-btn:hover i {
+    color: var(--accent) !important;
+    transform: rotate(45deg);
+}
+
+.legend-shape {
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.l-point {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.l-line {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
+}
+
+.l-poly {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Speciální typ pro pyro zóny – tučný obrys + průhledná výplň */
+.l-poly-pyro {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    border: 3px solid #cc0000;
+    background-color: rgba(204, 0, 0, 0.3);
+    box-sizing: border-box;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.legend-vyskoc {
+    min-width: 180px;
+}
+
+.legend-vyskoc-fix {
+    position: fixed !important;
+    z-index: 9999 !important;
+    background: white !important;
+    width: 220px !important;
+    padding: 15px !important;
+    border-radius: 4px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(184, 102, 102, 0.3) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    pointer-events: auto !important;
+}
+
+.legend-close-x {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    background: #f0f0f0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 24px !important;
+    height: 24px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #666 !important;
+}
+
+.legend-close-x:hover {
+    background: #e0e0e0 !important;
+}
+
+/* ========================
+   Metadata štítky vrstev
+======================== */
+.layer-meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+    margin-top: 2px;
+}
+
+.lmb {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 7px 2px 5px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+.lmb i {
+    font-size: 11px;
+}
+
+/* Typ dat */
+.lmb--raster    { background: rgba(54, 140, 84, 0.13);  color: #246b3a; border: 1px solid rgba(54,140,84,0.25); }
+.lmb--vector    { background: rgba(220, 38, 38, 0.10);  color: #b91c1c; border: 1px solid rgba(220,38,38,0.22); }
+.lmb--3d        { background: rgba(37, 99, 235, 0.11);  color: #1d4ed8; border: 1px solid rgba(37,99,235,0.25); }
+
+/* Dotazovací */
+.lmb--queryable { background: rgba(234,179, 8, 0.13);   color: #92400e; border: 1px solid rgba(234,179,8,0.30); }
+
+/* Typ geometrie – oranžová */
+.lmb--point,
+.lmb--line,
+.lmb--polygon,
+.lmb--mixed     { background: rgba(234, 88, 12, 0.11);  color: #c2410c; border: 1px solid rgba(234,88,12,0.25); }

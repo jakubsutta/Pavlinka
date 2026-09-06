@@ -1,0 +1,657 @@
+/* ========================
+   Náhledové fotky podkladových map
+======================== */
+.basemap-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+    margin-bottom: 20px;
+    padding: 0 4px;
+    border: none;
+}
+
+.basemap-thumb-label {
+    cursor: pointer;
+    width: 100%;
+}
+
+.basemap-thumb-label input[type="radio"] {
+    display: none;
+}
+
+.thumb-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px;
+    background: #fdfdfd;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    transition: all 0.2s ease;
+}
+
+.thumb-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    border-color: #a0aab5;
+    background: white;
+    transform: translateY(-2px);
+}
+
+.thumb-card span {
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+/* Ikona "i" v rohu */
+.info-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.info-btn:hover {
+    background: white;
+}
+
+.info-btn i {
+    color: var(--text-dark);
+}
+
+.info-overlay.vyskoc-ven {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 999999 !important;
+    background: white !important;
+    width: 280px !important;
+    padding: 16px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid #e0e0e0 !important;
+    flex-direction: column !important;
+    pointer-events: auto !important;
+    font-size: 11px;
+}
+
+.info-overlay.vyskoc-ven::before {
+    content: "";
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    border-width: 0 8px 8px 8px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+    filter: drop-shadow(0 -1px 1px rgba(0,0,0,0.05));
+}
+
+.info-overlay.vyskoc-ven strong {
+    margin-bottom: 6px;
+    color: var(--text-dark);
+    font-size: 12px;
+    padding-right: 20px; /* space for close btn */
+}
+
+/* Metadata štítky uvnitř info overlay podkladové mapy */
+.info-overlay .layer-meta-badges {
+    margin-bottom: 8px;
+    margin-top: 4px;
+}
+
+
+.close-info-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #444;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.close-info-btn:hover {
+    background: rgba(0,0,0,0.05);
+}
+
+/* náhledové img pro podkladovky */
+.basemap-thumb-label input[type="radio"]:checked+.thumb-card {
+    background: rgba(54, 140, 84, 0.05);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.basemap-thumb-label input[type="radio"]:checked+.thumb-card span {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.thumb-img {
+    width: 100%;
+    height: 48px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background-color: #d8d8e8;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Placeholder vzory */
+.thumb-osm {
+    background-image: url('/img/osm.jpeg');
+}
+
+.thumb-carto {
+    background-image: url('/img/carto.jpeg');
+}
+
+.thumb-cuzk {
+    background-image: url('/img/cuzk_orto.png');
+}
+
+.thumb-msk {
+    background-image: url('/img/msk_orto.png');
+}
+
+.thumb-orto50 {
+    background-image: url('/img/orto50.png');
+}
+
+.thumb-google-sat {
+    background-image: url('/img/google_sat.png');
+}
+
+.thumb-vojI {
+    background-image: url('/img/vojI.png');
+}
+
+.thumb-vojII {
+    background-image: url('/img/vojII.png');
+}
+
+.thumb-vojIII {
+    background-image: url('/img/vojIII.png');
+}
+
+.thumb-mullerM {
+    background-image: url('/img/mullerM.png');
+}
+
+.thumb-msk-cisar {
+    background-image: url('/img/cisar.png');
+}
+
+.thumb-msk-up {
+    background-image: url('/img/up.png');
+}
+
+.thumb-orto-archiv {
+    background-image: url('/img/orto_archiv.png');
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thumb-cuzk-prehledova {
+    background-image: url('/img/cuzk_prehledova.png');
+}
+
+.thumb-cuzk-topograficka {
+    background-image: url('/img/cuzk_topograficka.png');
+}
+
+.thumb-dmp {
+    background-image: url('/img/dmp.png');
+}
+
+.thumb-slope {
+    background-image: url('/img/slope.png');
+}
+
+.thumb-aspect {
+    background-image: url('/img/aspect.png');
+}
+
+.thumb-msk-1955 {
+    background-image: url('/img/1955.jpeg');
+}
+
+.thumb-parcelni {
+    background-image: url('/img/parcelni.jpeg');
+}
+
+.thumb-cesium-3d {
+    background-image: url('/img/cesium_3d.png');
+}
+
+.thumb-bing-3d {
+    background-image: url('/img/bing_3d.png');
+}
+
+/* Časová osa archivních map */
+#timeline-container {
+    position: absolute;
+    bottom: 40px;
+    left: calc(50% + 160px); /* Posun doprava o panel vrstev */
+    transform: translateX(-50%);
+    z-index: 1000;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#timeline-container.timeline-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 20px);
+}
+
+.timeline-box {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    padding: 6px 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.timeline-header {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dark);
+    text-align: center;
+}
+
+.timeline-header strong {
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.timeline-slider-wrapper {
+    position: relative;
+    padding-bottom: 22px; /* Místo pro zešikmené popisky */
+}
+
+#orto-year-slider {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.timeline-labels {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 10px;
+    color: #444;
+    font-weight: 600;
+}
+
+.timeline-labels span {
+    flex: 1;
+    text-align: center;
+    transform: rotate(-35deg);
+    transform-origin: top center;
+    white-space: nowrap;
+}
+
+.thumb-card span {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent);
+    text-align: center;
+}
+
+/* Base Layer Info Overlay and Zoom Warning */
+
+.zoom-warning {
+    position: absolute;
+    top: 20px;
+    left: calc(50% + 160px);
+    transform: translateX(-50%);
+    background: rgb(250, 164, 164);
+    color: #8d0808;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    font-weight: 500;
+    font-size: 10px;
+    z-index: 9999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translate(-50%, -20px) scale(0.9);
+}
+
+.zoom-warning i {
+    color: #dc2626;
+    font-size: 14px;
+}
+
+.zoom-warning.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0) scale(1);
+}
+
+/* Styly pro "Tmavý" režim */
+.osm-grayscale {
+    filter: grayscale(100%);
+}
+/* ========================
+   Basemap Widget (Top Right)
+======================== */
+.leaflet-top.leaflet-right {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 8px;
+    padding-top: 10px;
+    padding-right: 10px;
+    pointer-events: none; /* Let clicks pass through empty areas */
+}
+
+.leaflet-top.leaflet-right .leaflet-control {
+    margin: 0 !important;
+    pointer-events: auto;
+}
+
+.basemap-ui-wrapper {
+    display: none; /* Skryté do načtení JS */
+}
+
+/* Tlačítko pro vyvolání podkladových map (jako součást leaflet-bar) */
+.basemap-toggle-btn {
+    cursor: pointer;
+    position: relative;
+    padding: 2px !important;
+    box-sizing: border-box;
+}
+
+/* Zvětšená tlačítka pro MAWIS styl - vázáno na style guide */
+.leaflet-top.leaflet-right .leaflet-control.custom-zoom-basemap-group {
+    display: flex !important;
+    flex-direction: row !important;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    padding: 4px;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.custom-zoom-basemap-group a {
+    text-decoration: none;
+    color: #444;
+}
+
+/* Levá část: velké tlačítko pro mapu */
+.basemap-toggle-btn {
+    width: 64px !important;
+    height: 64px !important;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 2px !important;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.basemap-toggle-btn.is-open {
+    box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.basemap-toggle-btn.is-open .basemap-overlay-icon {
+    background: rgba(54, 140, 84, 0.35); /* Jemně zelený overlay při otevření */
+}
+
+#current-basemap-thumb {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+}
+
+.basemap-overlay-icon {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.15);
+    pointer-events: none;
+}
+
+.basemap-overlay-icon i {
+    font-size: 42px !important;
+    color: #e0e0e0 !important; /* světle šedá */
+}
+
+/* Pravá část: Zoom ovládání */
+.zoom-controls-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 32px;
+}
+
+.zoom-controls-col a, .zoom-controls-col .zoom-info-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: white;
+    cursor: pointer;
+}
+
+.zoom-controls-col a {
+    height: 33.33%;
+    flex: 1;
+}
+
+.zoom-controls-col a:hover {
+    background: #f4f4f4;
+}
+
+.zoom-controls-col a svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 48px;
+}
+
+.zoom-info-display {
+    height: 33.33%;
+    flex: 1;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    border-top: 1px solid #eaeaea;
+    border-bottom: 1px solid #eaeaea;
+    cursor: default !important;
+}
+
+/* Aby obrázek vyplnil obdélníkové tlačítko a vypadal jako v MAWIS */
+#current-basemap-thumb {
+    width: 100%;
+    height: 100%;
+    border-radius: 2px;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+}
+
+.basemap-toggle-btn:hover {
+    background-color: #f4f4f4;
+}
+
+.basemap-expandable-panel {
+    position: absolute;
+    top: 0;
+    right: 120px; /* Šířka nového widgetu (64+32+padding) + gap */
+    width: 360px; /* Šířka pro 3 sloupce jako dříve */
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 12px;
+    display: block;
+    max-height: 60vh; /* Omezení výšky aby šlo vždy scrollovat */
+    overscroll-behavior: contain; /* Zabraní scrollování mapy/stránky pod panelem */
+    overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 10000; /* Z-index aby překryl Nástroje */
+}
+
+.basemap-expandable-panel.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* Zmenšení náhledů uvnitř panelu */
+.basemap-expandable-panel .layer-group-header {
+    font-size: 14px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+    font-weight: 600;
+}
+
+
+/* Force vertical stacking in topright just in case */
+.leaflet-top.leaflet-right {
+    display: block !important;
+}
+.leaflet-top.leaflet-right .leaflet-control {
+    clear: both !important;
+    float: right !important;
+    display: block !important;
+}
+
+/* Info v pravém panelu dole */
+.active-basemap-info-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+}
+
+.active-basemap-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.active-basemap-title strong {
+    color: var(--accent);
+}
+
+.active-basemap-info-content {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #444;
+    padding: 8px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    overflow: hidden;
+    max-height: 300px;
+    transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
+}
+
+
+/* Fix pro Leaflet bar clipping */
+.custom-zoom-basemap-bar {
+    overflow: visible !important;
+}
+
+/* ── Nástroje pod mapou (Grid 3+2) ── */
+.leaflet-top.leaflet-right .leaflet-control.tools-grid-container {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 6px !important;
+    clear: both !important;
+    float: right !important;
+    width: 112px; /* Šířka hlavního boxu (64 + 32 + 8 gap + 8 padding = 112px) */
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+.tools-grid-container .leaflet-control {
+    margin: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    display: flex !important;
+}
+
+.tools-grid-container .leaflet-control a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: white !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    color: #444 !important;
+    text-decoration: none !important;
+    font-size: 18px !important;
+    transition: background 0.2s, color 0.2s !important;
+    border: none !important;
+    line-height: normal !important;
+}
+
+.tools-grid-container .leaflet-control a:hover {
+    background: #f4f4f4 !important;
+}
+
+.tools-grid-container .leaflet-control a.active {
+    background: var(--accent) !important;
+    color: white !important;
+}

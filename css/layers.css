@@ -1,0 +1,98 @@
+/* ========================
+   Vrstvy
+======================== */
+.camera-map-icon {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+}
+
+.camera-map-icon i {
+    font-size: 20px;
+    color: #000000;
+    filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+/* ── Pyrotechnické zóny – popisky polygonů ── */
+.pyro-label-icon {
+    background: transparent !important;
+    border: none !important;
+    pointer-events: none;
+    overflow: visible !important;   /* umožní text přetéct přes nulový box */
+}
+
+.pyro-label-text {
+    position: absolute;
+    transform: translate(-50%, -50%);  /* vycentruje text přesně na bod markeru */
+    white-space: nowrap;
+    font-family: 'Open Sans', 'Inter', sans-serif;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: #cc0000;
+    text-transform: uppercase;
+    /* Klasický bílý obrys textu (ne halo efekt) */
+    -webkit-text-stroke: 3px white;
+    paint-order: stroke fill;
+    user-select: none;
+}
+
+/* ── Indikátor aktivních skupin ── */
+.active-groups-indicator {
+    position: absolute;
+    bottom: 24px;
+    left: calc(var(--panel-width, 350px) + 16px);
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    transition: left 0.3s ease;
+    pointer-events: auto;
+}
+
+/* Když je panel sbalený, indikátor se posune doleva */
+.main-content:has(.panel.collapsed) .active-groups-indicator {
+    left: 66px;
+}
+
+.active-group-icon {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--border-radius, 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    animation: popInGroup 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: default;
+    background-color: white;
+}
+
+.active-group-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--icon-bg);
+    border-radius: inherit;
+    pointer-events: none;
+    transition: background-color 0.2s ease;
+}
+
+.active-group-icon i {
+    position: relative;
+    z-index: 1;
+    color: var(--icon-color) !important;
+    transition: transform 0.4s ease;
+}
+
+.active-group-icon:hover i {
+    transform: rotate(360deg);
+}
+
+@keyframes popInGroup {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}

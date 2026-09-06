@@ -1,0 +1,4593 @@
+/* ========================
+   Preloader (Načítání)
+======================== */
+#app-preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+    transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+#app-preloader.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Loader pro data v mapě */
+#map-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10002;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 15px;
+    border-radius: 4px;
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+#map-loader.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#map-loader .loader {
+    height: 30px;
+    /* Ještě menší verze */
+}
+
+.loader-container-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.loader-container-mini p {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.loader-container {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.loader-container p {
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 14px;
+}
+
+.loader {
+    height: 60px;
+    aspect-ratio: 1;
+    border: 3px solid var(--accent-light);
+    position: relative;
+}
+
+.loader:before {
+    content: "";
+    position: absolute;
+    width: 30%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--accent);
+    animation:
+        l7-0 .49s infinite alternate linear -.11s,
+        l7-1 .71s infinite alternate linear -.23s;
+}
+
+@keyframes l7-0 {
+
+    0%,
+    5% {
+        bottom: 0%
+    }
+
+    95%,
+    to {
+        bottom: 70%
+    }
+}
+
+@keyframes l7-1 {
+
+    0%,
+    5% {
+        left: 0%
+    }
+
+    95%,
+    to {
+        left: 70%
+    }
+}
+
+/* ========================
+   Základní nastavení
+======================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    color: rgb(101, 101, 104);
+    outline: none !important;
+}
+
+body,
+html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ========================
+   Paleta barev
+======================== */
+:root {
+    --accent: rgb(54, 140, 84);
+    --accent-light: #62d488;
+    --accent-border: rgb(54, 140, 84);
+    --white-transparent: rgba(255, 255, 255, 0.98);
+    --border-radius: 4px;
+    /* zachováno pro Leaflet UI */
+    --text: #666;
+    --text-light: #aaa;
+    --text-dark: rgb(54, 140, 84);
+    --checkbox-border: #d9d9d9;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ========================
+   Hlavní obsah – mapa
+======================== */
+.main-content {
+    flex: 1;
+    position: relative;
+    display: flex;
+    overflow: hidden;
+}
+
+#map,
+#cesiumContainer {
+    width: 100%;
+    height: 100%;
+    background-color: #e8e8ee;
+}
+
+#cesiumContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    /* Under the sidebar which has z-index 1000 */
+}
+
+/* Plynulý zoom */
+.leaflet-fade-anim .leaflet-tile,
+.leaflet-zoom-anim .leaflet-zoom-animated {
+    will-change: auto !important;
+}
+
+/* ========================
+   Levý panel
+======================== */
+.panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 350px; /* Výchozí širší panel (Mawis-style) */
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    z-index: 1000;
+    display: flex;
+    transition: transform 0.3s ease; /* Vyjmuta šířka z animace kvůli manuálnímu roztahování */
+}
+
+.panel.collapsed {
+    transform: translateX(calc(-100% + 50px)); /* Zohledňuje změnu šířky panelu */
+}
+
+.panel-resizer {
+    position: absolute;
+    top: 0;
+    right: -5px;
+    bottom: 0;
+    width: 10px;
+    cursor: ew-resize;
+    z-index: 1001;
+    background: transparent;
+}
+.panel-resizer:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Tlačítko sbalení */
+#toggle-panel-btn {
+    position: absolute;
+    right: -25px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25px;
+    height: 48px;
+    border: 1px solid #e0e0e0;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    background: #ffffff;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+    color: var(--accent);
+    font-weight: bold;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+/* ========================
+   Panel obsah – layout
+======================== */
+.panel-content {
+    padding: 16px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: var(--text);
+    transition: opacity 0.3s ease;
+    box-sizing: border-box;
+}
+
+.panel.collapsed .panel-content {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Úzký panel záložek při sbalení */
+.collapsed-tab-nav {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+.panel.collapsed .collapsed-tab-nav {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.collapsed-logo {
+    color: var(--accent);
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 36px;
+    margin-bottom: 24px;
+}
+
+.collapsed-nav-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    flex-grow: 1;
+    justify-content: flex-start;
+}
+
+.collapsed-footer {
+    color: var(--text-light);
+    font-size: 10px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.collapsed-tab-nav .tab-btn {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    color: var(--text-light);
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
+}
+
+.collapsed-tab-nav .tab-btn i {
+    font-size: 16px;
+    margin: 0;
+    color: var(--text-light);
+}
+
+.collapsed-tab-nav .tab-btn i:hover {
+    color: var(--white-transparent);
+}
+
+.collapsed-tab-nav .tab-btn:hover {
+    color: var(--white);
+    background: var(--accent-light);
+}
+
+.collapsed-tab-nav .tab-btn.active {
+    color: var(--white);
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Vše uvnitř panelu dědí šedou barvu textu */
+.panel-content {
+    color: var(--text);
+}
+
+/* Panel header (přesunutý z <header>) */
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--accent-border);
+    flex-shrink: 0;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.panel-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.panel-header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    margin: 0;
+}
+
+.panel-header h1 span {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.6;
+    margin-left: 4px;
+    color: var(--accent);
+}
+
+/* Rychlá nápověda */
+.map-hint-help summary {
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 12px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dark);
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* ikonky nápovědy */
+.map-controls-hint span {
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.map-controls-hint i {
+    color: var(--text-light);
+}
+
+/* Vrstvový manažer – scrollovatelný střed */
+#layer-manager {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Tenký scrollbar, aby nepřekrýval tlačítka */
+#layer-manager::-webkit-scrollbar {
+    width: 5px;
+}
+
+#layer-manager::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#layer-manager::-webkit-scrollbar-thumb {
+    background: rgba(54, 140, 84, 0.25);
+    border-radius: 4px;
+}
+
+#layer-manager::-webkit-scrollbar-thumb:hover {
+    background: rgba(54, 140, 84, 0.5);
+}
+
+#layer-manager i {
+    color: var(--text-dark);
+}
+
+/* Nadpisy skupin */
+.panel-content h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.panel-content h3 {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 14px 0 1px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+}
+
+/* ========================
+   Skupiny vrstev
+======================== */
+.panel-divider {
+    border: none;
+    border-top: 1px solid var(--accent-border);
+    margin: 15px 0;
+    width: 100%;
+}
+
+.layer-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 4px;
+    padding: 5px 8px;
+    margin-left: -8px;
+    margin-right: -8px;
+    border-radius: var(--border-radius);
+    color: #222222 !important;
+    transition: background 0.2s, color 0.2s;
+}
+
+.layer-group-header h3,
+.layer-group-header span,
+.layer-group-header i,
+.layer-group-header {
+    color: #222222 !important;
+}
+
+.group-master-checkbox {
+    accent-color: #222222 !important;
+}
+
+.layer-group {
+    max-height: 400px;
+    padding: 8px 0;
+}
+
+.basemap-thumbnails {
+    max-height: 800px;
+}
+
+.layer-group,
+.basemap-thumbnails {
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out, margin 0.3s ease-in-out, padding 0.3s ease-in-out;
+    opacity: 1;
+}
+
+.is-collapsed {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    pointer-events: none;
+}
+
+.toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.is-collapsed-icon {
+    transform: rotate(-180deg);
+}
+
+.layer-group label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    min-height: 25px !important;
+    padding: 2px 0 !important;
+    padding-left: 24px !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 4px !important;
+    cursor: pointer !important;
+    position: relative !important;
+}
+
+/* Vertikální linie stromu pro každou položku */
+.layer-group label::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 8px;
+    border-left: 1px dashed rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+}
+
+/* První položka */
+.layer-group label:first-of-type::before {
+    top: 0;
+}
+
+/* Poslední položka */
+.layer-group label:last-of-type::before {
+    bottom: 50%;
+}
+
+/* Horizontální linie stromu */
+.layer-group label::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    width: 10px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+}
+
+
+
+.layer-group label span.label-text {
+    flex: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Checkboxy a rádia (základní) */
+.layer-group input[type="checkbox"],
+.layer-group input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--checkbox-border);
+    cursor: pointer;
+    flex-shrink: 0 !important;
+    background: white;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+}
+
+.layer-group input[type="checkbox"] {
+    border-radius: 4px;
+}
+
+.layer-group input[type="radio"] {
+    border-radius: 50%;
+}
+
+/* Šedá fajfka pro checkbox */
+.layer-group input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    width: 3px;
+    height: 7px;
+    border: solid #b5b5b5;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Šedé kolečko pro rádio */
+.layer-group input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #666;
+    border-radius: 50%;
+}
+
+/* ========================
+   Panel footer (přesunutý z <footer>)
+======================== */
+.panel-footer {
+    flex-shrink: 0;
+    padding-top: 10px;
+    margin-top: 8px;
+    border-top: 1px solid var(--accent-border);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.footer-right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-info-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: rgba(54, 140, 84, 0.08);
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.footer-info-btn:hover {
+    background: rgba(54, 140, 84, 0.15);
+}
+
+.footer-info-btn i {
+    font-size: 14px;
+    color: inherit;
+}
+
+.panel-footer .coords {
+    font-size: 11px;
+    color: var(--text);
+    opacity: 0.8;
+}
+
+.panel-footer .copyright {
+    font-size: 10px;
+    color: var(--text);
+    opacity: 0.5;
+}
+
+/* ========================
+   Leaflet UI
+======================== */
+.leaflet-bar {
+    border: 1px solid #ccc !important;
+    border-radius: 2px !important;
+    box-shadow: none !important;
+    overflow: hidden;
+}
+
+
+
+.zoom-info-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    color: var(--accent);
+    flex: none;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    border-bottom: 1px solid #eee;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Zoom control - upraveno podle vzoru MAWIS (vertikální) */
+.leaflet-control-zoom {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 34px !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+}
+
+.leaflet-control-zoom a,
+.leaflet-control-zoom a:hover {
+    flex: none;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+    border-bottom: 1px solid #eee;
+}
+
+.leaflet-control-zoom a:last-child {
+    border-bottom: none;
+}
+
+.leaflet-bar a:hover {
+    background-color: #f0f0f0 !important;
+    color: #333 !important;
+}
+
+/* Ikony z Phosphoru uvnitř Leaflet prvků */
+.leaflet-bar a i {
+    font-size: 14px;
+    /* Velikost ikon */
+}
+
+/* Odstranění původní ikony pravítka z pluginu leaflet-measure */
+.leaflet-control-measure .leaflet-control-measure-toggle,
+.leaflet-control-measure .leaflet-control-measure-toggle:hover {
+    background-image: none !important;
+    text-indent: 0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 4px !important;
+    /* Důležité: přepsání kulatého tvaru pluginu */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background-color: white !important;
+}
+
+/* Rozevřené okno měření */
+.leaflet-control-measure {
+    border: 1px solid #ccc !important;
+    border-radius: 2px !important;
+    background: white !important;
+    box-shadow: none !important;
+    color: #444 !important;
+}
+
+/* Obsah v rozbaleném okně měření */
+.leaflet-control-measure .leaflet-control-measure-interaction {
+    padding: 10px !important;
+}
+
+/* Všechny texty v měření šedé pro jednotný vzhled */
+.leaflet-control-measure * {
+    color: #666;
+}
+
+.leaflet-control-measure a,
+.leaflet-control-measure a:hover {
+    color: var(--accent) !important;
+    background: transparent !important;
+    border: none !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: normal !important;
+    display: inline-block !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    white-space: nowrap !important;
+}
+
+.leaflet-control-measure a:hover {
+    color: #333 !important;
+}
+
+/* === PŘEKLAD LEAFLET-MEASURE DO ČEŠTINY POMOCÍ CSS === */
+
+/* Skrytí původních anglických textů */
+.leaflet-control-measure h3,
+.leaflet-control-measure .js-start,
+.leaflet-control-measure .js-cancel,
+.leaflet-control-measure .js-finish {
+    font-size: 0 !important;
+    text-indent: 0 !important;
+}
+
+/* Český nadpis */
+.leaflet-control-measure h3::after {
+    content: "Měření v mapě";
+    font-size: 13px;
+    font-weight: bold;
+    display: block;
+}
+
+/* Tlačítka */
+.leaflet-control-measure .js-start::after {
+    content: "Zahájit nové měření";
+    font-size: 12px;
+}
+
+.leaflet-control-measure .js-cancel::after {
+    content: "Zrušit";
+    font-size: 12px;
+}
+
+.leaflet-control-measure .js-finish::after {
+    content: "Dokončit měření";
+    font-size: 12px;
+}
+
+/* Oprava zobrazení SVG ikonek v tlačítkách */
+.leaflet-bar a svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 20px;
+    /* Tučnější vzhled */
+    color: #666;
+}
+
+/* ========================
+   Skrytí measure tlačítka z mapy
+======================== */
+.leaflet-control-measure {
+    display: none !important;
+}
+
+/* ========================
+   Záložky (Tab system)
+======================== */
+.tab-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--accent-border);
+}
+
+.tab-btn {
+    flex: 1;
+    min-width: 0;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px;
+    padding: 6px 2px 4px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    cursor: pointer;
+    color: var(--text-light);
+    transition: all 0.2s ease;
+    opacity: 1;
+}
+
+.tab-btn i {
+    font-size: 16px;
+    color: inherit;
+}
+
+.tab-btn span {
+    color: inherit;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tab-btn:hover {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom: 3px solid var(--accent);
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    font-weight: 700;
+}
+
+/* Obsah záložek */
+#tabs-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.tab-panel {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+
+.tab-panel.active {
+    display: flex;
+}
+
+/* Nadpis sekce v záložce */
+.tab-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tab-section-title i {
+    font-size: 14px;
+    color: var(--accent);
+}
+
+/* Společné tlačítko akce v záložce */
+.tab-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--accent);
+    color: white !important;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-bottom: 8px;
+}
+
+.tab-action-btn i {
+    font-size: 14px;
+    color: white !important;
+}
+
+.tab-action-btn:hover {
+    opacity: 0.85;
+}
+
+.tab-action-btn:active {
+    transform: scale(0.98);
+}
+
+.tab-action-btn--secondary {
+    background: var(--accent);
+    color: white !important;
+    border: none;
+}
+
+.tab-action-btn--secondary i {
+    color: white !important;
+}
+
+.tab-action-btn--danger {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border: none !important;
+}
+
+.tab-action-btn--danger i {
+    color: #991b1b !important;
+}
+
+.tab-action-btn--danger:hover {
+    background: #fecaca !important;
+}
+
+.tab-action-btn--confirm {
+    background: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: none !important;
+}
+
+.tab-action-btn--confirm i {
+    color: #0369a1 !important;
+}
+
+.tab-action-btn--confirm:hover {
+    background: #bae6fd !important;
+}
+
+.tab-action-btn--edit {
+    background: #dcfce7 !important;
+    color: #15803d !important;
+    border: none !important;
+}
+
+.tab-action-btn--edit i {
+    color: #15803d !important;
+}
+
+.tab-action-btn--edit:hover {
+    background: #bbf7d0 !important;
+}
+
+/* Kompaktní varianta tlačítek v headeru (Zpět / Upravit) */
+.tab-action-btn--icon {
+    width: auto;
+    padding: 6px 12px;
+    margin-bottom: 0;
+    font-size: 11px;
+}
+
+/* Titulek formuláře vedle tlačítka Zpět */
+.edit-form-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+}
+
+/* Form actions - plné šířky */
+.form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.form-actions .tab-action-btn {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+/* ========================
+   Karta: TISK
+======================== */
+.print-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.print-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.print-field label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+}
+
+.print-field input[type="text"] {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.print-field input[type="text"]:focus {
+    border-color: var(--accent);
+}
+
+/* Stylování selectů v bočním panelu */
+.print-field select,
+#edit-form select {
+    width: 100%;
+    padding: 8px 30px 8px 10px;
+    border: 1px solid rgba(54, 140, 84, 0.2);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-dark);
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Cpath fill='%237a0000' d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80a8,8,0,0,1,11.32-11.32L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.print-field select:focus,
+#edit-form select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(54, 140, 84, 0.1);
+}
+
+.print-radio-group {
+    display: flex;
+    gap: 12px;
+}
+
+.print-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.print-field-check {
+    margin-bottom: 6px;
+}
+
+.print-check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* ========================
+   Karta: POZNÁMKY (Měření + Kreslení)
+======================== */
+/* Segmentovaný přepínač (sjednocený vzhled přepínačů) */
+.notes-switcher,
+#katastr-query-selector,
+.print-radio-group {
+    background: rgba(54, 140, 84, 0.05) !important;
+    border: 1px solid rgba(54, 140, 84, 0.15) !important;
+    border-radius: var(--border-radius) !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    align-items: center !important;
+}
+
+#katastr-query-selector,
+.print-radio-group {
+    display: flex !important;
+}
+
+.notes-switcher {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Vzdálenosti pod přepínači */
+.notes-switcher,
+#katastr-query-selector {
+    margin-bottom: 16px !important;
+}
+
+.print-radio-group {
+    margin-top: 4px !important;
+}
+
+/* Tlačítka přepínače (pro .notes-switch-btn a popisky s radio-buttony) */
+.notes-switch-btn,
+#katastr-query-selector label,
+.print-radio-label {
+    flex: 1;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 8px 4px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 4px !important;
+    color: var(--text) !important;
+    font-weight: 500 !important;
+    font-size: 11.5px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    margin: 0 !important;
+}
+
+.notes-switch-btn:hover,
+#katastr-query-selector label:hover,
+#data-query-selector label:hover,
+.print-radio-label:hover {
+    background: rgba(54, 140, 84, 0.08) !important;
+    color: var(--accent) !important;
+}
+
+/* Skrytí nativního radio inputu v těchto přepínačích */
+#katastr-query-selector label input[type="radio"],
+#data-query-selector label input[type="radio"],
+.print-radio-label input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+}
+
+/* Aktivní stav */
+.notes-switch-btn.active,
+#katastr-query-selector label:has(input[type="radio"]:checked),
+#data-query-selector label:has(input[type="radio"]:checked),
+.print-radio-label:has(input[type="radio"]:checked),
+.layer-group input[type="radio"]:checked {
+    border: 5px solid var(--accent);
+}
+
+/* --- Inline Legenda (Mawis styl) --- */
+.inline-legend-container {
+    padding: 10px 12px 10px 42px;
+    background: #e9ecef;
+    border-bottom: 1px solid #d1d5db;
+    font-size: 11px;
+    color: #444;
+}
+
+.inline-legend-container .legend-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.inline-legend-container .zoom-to-layer-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #444;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.inline-legend-container .zoom-to-layer-btn:hover {
+    background: rgba(0,0,0,0.05);
+    color: var(--accent);
+}
+
+.inline-legend-container .opacity-slider {
+    flex: 1;
+    accent-color: #a0aab5;
+    cursor: pointer;
+    height: 4px;
+}
+
+.inline-legend-container .legend-items-box {
+    background: white;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.inline-legend-container .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.inline-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notes-switch-btn.active,
+#katastr-query-selector label:has(input[type="radio"]:checked),
+#data-query-selector label:has(input[type="radio"]:checked),
+.print-radio-label:has(input[type="radio"]:checked) {
+    background: var(--accent) !important;
+    color: white !important;
+}
+
+.notes-switch-btn.active i,
+#katastr-query-selector label:has(input[type="radio"]:checked) i,
+#data-query-selector label:has(input[type="radio"]:checked) i,
+.print-radio-label:has(input[type="radio"]:checked) i {
+    color: white !important;
+}
+
+.notes-switch-btn i {
+    font-size: 14px;
+    color: var(--text-light);
+    transition: color 0.2s ease;
+}
+
+.notes-switch-btn:hover:not(.active) i {
+    color: var(--accent) !important;
+}
+
+
+
+@keyframes pulse-dot-anim {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: scale(1.3);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+}
+
+.notes-section {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+}
+
+.notes-section.active {
+    display: flex;
+}
+
+/* ========================
+   Karta: MĚŘENÍ
+======================== */
+/* Měření - volba režimu (volné místo) */
+
+.measure-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 10px;
+}
+
+.measure-hint {
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    padding: 8px;
+}
+
+.measure-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.measure-status--idle {
+    background: #f0f0f0;
+    color: var(--text-light);
+}
+
+.measure-status--active {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.measure-status--done {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+.measure-results {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.measure-results-empty {
+    font-size: 11px;
+    color: var(--text-light);
+    font-style: italic;
+    text-align: center;
+    padding: 16px 0;
+}
+
+.measure-result-item {
+    background: white;
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.measure-result-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.measure-result-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* ========================
+   Karta: KRESLENÍ
+======================== */
+.draw-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Pod-přepínač – vizuálně pod hlavním .notes-switcher (segmented control styl) */
+.draw-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    /* Šedý track kontejner – jasnoji vízdně než hlavní přepínač */
+    background: rgba(0, 0, 0, 0.07);
+    border: 1px solid rgba(54, 140, 84, 0.20);
+    border-radius: 9px;
+    padding: 3px;
+    margin-bottom: 10px;
+}
+
+.draw-tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Menší padding než hlavní přepínač (který má 8px) */
+    padding: 5px 6px;
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    color: var(--text-light);
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* Vnitřní wrapper – pevně fixovaný, nikdy se nehýbe */
+.dtb-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.dtb-inner i {
+    font-size: 12px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.draw-tool-btn:hover:not(.active):not(:has(input[type="radio"]:checked)) {
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--accent);
+}
+
+/* Aktivní stav – bílý chip s elevation, accent text/ikony (segmented control) */
+.draw-tool-btn.active,
+.draw-tool-btn:has(input[type="radio"]:checked) {
+    background: white !important;
+    color: var(--accent) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+/* Bulletproof obarvení vnitřního wrapperu na accent */
+.draw-tool-btn.active .dtb-inner,
+.draw-tool-btn.active .dtb-inner i,
+.draw-tool-btn.active .dtb-inner span,
+.draw-tool-btn input[type="radio"]:checked+.dtb-inner,
+.draw-tool-btn input[type="radio"]:checked+.dtb-inner i,
+.draw-tool-btn input[type="radio"]:checked+.dtb-inner span {
+    color: var(--accent) !important;
+}
+
+.draw-tool-btn input[type="radio"] {
+    display: none;
+}
+
+/* Profil vozidla v záložce Trasa má 3 sloupce */
+#notes-route-section .draw-tools {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.draw-settings {
+    background: var(--white-transparent);
+    padding: 12px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--accent-border);
+}
+
+.draw-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid rgba(184, 102, 102, 0.1);
+    border-radius: var(--border-radius);
+    margin-bottom: 6px;
+}
+
+.draw-list-item .shape-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+
+.draw-list-item-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.draw-list-item-delete {
+    background: transparent;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.draw-list-item-delete:hover {
+    background: rgba(230, 57, 70, 0.1);
+}
+
+/* ========================
+   Karta: OBJEKTY
+======================== */
+.objects-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 12px;
+    text-align: center;
+    color: var(--text-light);
+}
+
+.objects-empty i {
+    font-size: 28px;
+    color: var(--text-light);
+    opacity: 0.5;
+}
+
+.objects-empty p {
+    font-size: 11px;
+    font-style: italic;
+    line-height: 1.5;
+}
+
+.objects-group-header {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 6px 0 4px;
+    margin-top: 8px;
+    border-bottom: 1px solid var(--accent-border);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.objects-group-header i {
+    font-size: 12px;
+    color: var(--accent);
+}
+
+.objects-subgroup-header {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 8px;
+    margin-top: 6px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.objects-subgroup-header i {
+    font-size: 11px;
+}
+
+.objects-subgroup-header--body {
+    background: #fff8e1 !important;
+    color: #b57400 !important;
+}
+
+.objects-subgroup-header--body i {
+    color: #b57400 !important;
+}
+
+.objects-subgroup-header--linie {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+}
+
+.objects-subgroup-header--linie i {
+    color: #2e7d32 !important;
+}
+
+.objects-subgroup-header--plochy {
+    background: #e1f5fe !important;
+    color: #0277bd !important;
+}
+
+.objects-subgroup-header--plochy i {
+    color: #0277bd !important;
+}
+
+.objects-subgroup-header--ostatni {
+    background: rgba(54, 140, 84, 0.03) !important;
+    color: var(--text-light) !important;
+}
+
+.objects-subgroup-header--ostatni i {
+    color: var(--accent) !important;
+}
+
+.object-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(184, 102, 102, 0.08);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 4px;
+}
+
+.object-item-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.object-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.object-item-name {
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.object-item-type {
+    font-size: 10px;
+    color: var(--text-light);
+}
+
+.object-item-action-btn {
+    flex-shrink: 0 !important;
+    padding: 0 2px !important;
+    background-color: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px !important;
+    transition: background-color 0.2s;
+}
+
+.object-item-action-btn:hover {
+    background-color: rgba(54, 140, 84, 0.08) !important;
+}
+
+.object-item-action-btn i {
+    color: #bbb !important;
+    font-size: 14px !important;
+    transition: color 0.2s, transform 0.2s;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+}
+
+.object-item-action-btn.zoom-btn:hover i {
+    color: var(--accent) !important;
+    transform: scale(1.25);
+}
+
+.object-item-action-btn.legend-btn:hover i {
+    color: var(--accent) !important;
+    transform: rotate(45deg);
+}
+
+.object-item-action-btn.edit-btn:hover i {
+    color: var(--accent) !important;
+    transform: scale(1.2);
+}
+
+/* ========================
+   Detail objektu (read-only)
+======================== */
+#detail-view,
+#edit-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.detail-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+}
+
+.detail-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detail-attrs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-attr-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detail-attr-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.detail-attr-value {
+    font-size: 12px;
+    color: var(--text);
+    padding: 6px 8px;
+    background: var(--white-transparent);
+    border-radius: 4px;
+    border: 1px solid var(--accent-border);
+    min-height: 28px;
+    word-break: break-word;
+}
+
+.detail-attr-value:empty::after {
+    content: '—';
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* Toast notifikace */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    z-index: 10001;
+    font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px);
+}
+
+/* 3D Navigace */
+#cesium-navigation {
+    position: fixed;
+    top: 100px;
+    right: 12px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 12px;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.cesium-nav-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(20px);
+}
+
+#cesium-navigation .nav-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+#cesium-navigation .nav-row {
+    display: flex;
+    gap: 5px;
+}
+
+#cesium-navigation button {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 18px;
+}
+
+#cesium-navigation button:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+#cesium-navigation button:active {
+    transform: scale(0.9);
+}
+
+.nav-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+/* ========================
+   Brand Logo (vychází z loaderu)
+======================== */
+.brand-logo {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--accent-light);
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.brand-logo:before {
+    content: "";
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    border-radius: 50%;
+    background: var(--accent);
+    /* Logo je statické nebo se hýbe jen velmi jemně */
+    bottom: 10%;
+    left: 10%;
+    animation: logo-drift 4s infinite alternate ease-in-out;
+}
+
+@keyframes logo-drift {
+    0% {
+        bottom: 10%;
+        left: 10%;
+    }
+
+    100% {
+        bottom: 60%;
+        left: 60%;
+    }
+}
+
+.brand-logo-mini {
+    width: 18px;
+    height: 18px;
+    border-width: 1.5px;
+}
+
+/* ========================
+   Hledat (Vyhledávání)
+ ======================== */
+.search-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.search-field {
+    display: flex !important;
+    align-items: center;
+    gap: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    padding: 0 0 0 12px;
+    transition: border-color 0.2s;
+    height: 40px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.search-field:focus-within {
+    border-color: var(--accent);
+    box-shadow: none;
+}
+
+
+.search-field input {
+    flex: 1;
+    border: none !important;
+    outline: none !important;
+    padding: 8px 0;
+    font-size: 13px;
+    background: transparent !important;
+    color: var(--text-dark);
+    margin: 0;
+    list-style: none;
+}
+
+.search-field input::placeholder {
+    color: var(--text-light);
+    opacity: 0.7;
+}
+
+.search-field button {
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 40px;
+    transition: background 0.2s;
+}
+
+.search-field button:hover {
+    background: var(--accent-light);
+}
+
+.search-field button i {
+    font-size: 18px;
+    color: white;
+}
+
+.search-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    color: var(--text-light);
+}
+
+.loader-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--accent-light);
+    border-top: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.search-results-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-light);
+    font-style: italic;
+    font-size: 11px;
+}
+
+.search-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.search-item:hover {
+    background: white;
+    border-color: var(--accent-light);
+}
+
+.search-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--accent-light);
+    color: white;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.search-item-icon i {
+    font-size: 18px;
+    color: white;
+}
+
+.search-item-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.search-item-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-item-subtitle {
+    font-size: 10px;
+    color: var(--text-light);
+}
+
+.search-suggestions {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: none;
+    z-index: 100;
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* Custom Search Marker */
+.custom-search-marker {
+    background: transparent;
+    border: none;
+}
+
+.marker-pin {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--accent);
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -15px 0 0 -15px;
+    border: 2px solid var(--accent-light);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.custom-search-marker:hover .marker-pin,
+.custom-search-marker.geometry-hover-force .marker-pin {
+    background: #e63946;
+    border-color: #ff4d4d;
+    cursor: pointer;
+}
+
+.marker-pin::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    position: absolute;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ruian-search-polygon,
+.ruian-search-polyline {
+    transition: stroke 0.2s ease, fill 0.2s ease;
+    cursor: pointer;
+}
+
+.ruian-search-polygon:hover,
+.ruian-search-polygon.geometry-hover-force {
+    stroke: #e63946 !important;
+    fill: #e63946 !important;
+}
+
+.ruian-search-polyline:hover,
+.ruian-search-polyline.geometry-hover-force {
+    stroke: #e63946 !important;
+}
+
+/* RUIAN Popisky (Tooltips) */
+.leaflet-tooltip.ruian-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    text-shadow: 
+        -1px -1px 0 #fff,  
+         1px -1px 0 #fff,
+        -1px  1px 0 #fff,
+         1px  1px 0 #fff,
+         0px  0px 4px rgba(255,255,255,0.8);
+    pointer-events: auto; /* ZMĚNĚNO: Povolujeme myš na textu, JS zajistí synchronizaci! */
+    transition: all 0.2s ease;
+}
+
+/* Skrytí defaultního trojúhelníčku toolapu */
+.leaflet-tooltip.ruian-label::before {
+    display: none;
+}
+
+/* Hover efekt pro popisek (synchronizovaný přes JS s geometrií) */
+.leaflet-tooltip.ruian-label-hovered {
+    color: #e63946; /* Červená barva textu, stejná jako při hoveru na polygonu/linii */
+    text-shadow: 
+        -1px -1px 0 #fff,  
+         1px -1px 0 #fff,
+        -1px  1px 0 #fff,
+         1px  1px 0 #fff,
+         0px  0px 4px rgba(255,255,255,0.8); /* Původní bílé halo */
+    transform: scale(1.05);
+}
+
+
+/* vzhled měřítka */
+.leaflet-control-scale-line {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--accent-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 6px 10px;
+    text-align: center;
+    border-bottom: 3px solid var(--accent);
+}
+
+.leaflet-control-scale-line+.leaflet-control-scale-line {
+    display: none;
+}
+
+.leaflet-control-scale {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* ========================
+   Swipe Map Comparison UI
+   ======================== */
+.leaflet-bar a.leaflet-control-swipe-toggle.active,
+.leaflet-bar a.leaflet-control-swipe-toggle.active:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+}
+
+.swipe-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: var(--accent);
+    z-index: 1000;
+    cursor: ew-resize;
+    box-shadow: 0 0 12px rgba(54, 140, 84, 0.6);
+    left: 50%;
+    transform: translateX(-2px);
+    pointer-events: auto;
+}
+
+.swipe-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px;
+    height: 42px;
+    background: #ffffff;
+    border: 3px solid var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ew-resize;
+    user-select: none;
+    z-index: 1001;
+    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), background-color 0.2s;
+    gap: 3px;
+    color: var(--accent);
+}
+
+.swipe-handle i {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.swipe-handle:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    background-color: #fff8f8;
+    box-shadow: 0 6px 20px rgba(54, 140, 84, 0.35);
+}
+
+.swipe-controls-container {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    padding: 7px 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    animation: slideDownSwipe 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    max-width: 90vw;
+}
+
+@keyframes slideDownSwipe {
+    from {
+        transform: translate(-50%, -40px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, 0);
+        opacity: 1;
+    }
+}
+
+.swipe-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.swipe-control-group label {
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+}
+
+.swipe-map-select {
+    background: #ffffff;
+    border: 1px solid #d3d3d3;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: #222;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 130px;
+}
+
+.swipe-map-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(54, 140, 84, 0.15);
+}
+
+.swipe-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+/* Samostatné tlačítko Swipe – margin-top od zoom baru */
+.swipe-btn-standalone {
+    margin-top: 8px !important;
+}
+
+/* Standalone swipe button margin handled via .swipe-btn-standalone above */
+
+/* ── Swipe: rok archivn\u00edho ortofota ── */
+.swipe-year-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 3px 0 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+.swipe-year-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) 50%, #d9d9d9 50%);
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+}
+
+.range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    accent-color: var(--accent);
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+}
+
+.range-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.range-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+.range-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.swipe-year-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    cursor: ew-resize;
+}
+
+/* Obaly pro posuvníky (např. Solární potenciál) */
+.range-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 4px 0;
+}
+
+.range-val {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.swipe-year-row span {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent);
+    min-width: 28px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* ========================
+   Průhlednost podkladové mapy – opacity control
+   ======================== */
+
+/* Opacity tlačítko – identické se swipe tlačítkem (leaflet-bar řeší border/shadow/radius) */
+.opacity-btn-standalone {
+    margin-top: 8px !important;
+}
+
+/* Hover/active stav tlačítka (kopíruje chování leaflet-bar a) */
+.leaflet-control-opacity-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px;
+    color: #555 !important;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.leaflet-control-opacity-toggle:hover {
+    background-color: #f4f4f4 !important;
+    color: #111 !important;
+}
+
+.leaflet-control-opacity-toggle.active,
+.leaflet-control-opacity-toggle.active:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+}
+
+/* Panel se sliderem – position:fixed = žádný overflow clip, plná interaktivita */
+.opacity-slider-panel {
+    position: fixed;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    overflow: visible;
+    /* umožní interakci se sliderem mimo viditelnou plochu */
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.opacity-slider-panel.open {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+.opacity-pct-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+    min-width: 28px;
+    text-align: center;
+    line-height: 1;
+}
+
+/* Obal vertikálního slideru – 96px wide (odpovídá neotočené šířce slideru) */
+.opacity-track-wrap {
+    position: relative;
+    height: 96px;
+    width: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+/* Slider – otočený o -90° → visually vertical */
+#basemap-opacity-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 96px;
+    height: 4px;
+    border-radius: 4px;
+    background: linear-gradient(to right, var(--accent) 100%, #d9d9d9 100%);
+    outline: none;
+    cursor: pointer;
+    transform: rotate(-90deg);
+    transform-origin: center;
+}
+
+#basemap-opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--accent);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s;
+}
+
+#basemap-opacity-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+    box-shadow: 0 2px 8px rgba(54, 140, 84, 0.3);
+}
+
+#basemap-opacity-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid var(--accent);
+    cursor: pointer;
+}
+
+/* Ikona oka (slashed) dole */
+.opacity-eye-off {
+    font-size: 11px;
+    color: #bbb;
+    line-height: 1;
+}
+
+/* ========================
+   Karta: KATASTR
+======================== */
+.katastr-status {
+    background: #f0f0f0;
+    color: var(--text);
+    font-size: 11px;
+    font-style: italic;
+    line-height: 1.5;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px dashed var(--accent-border);
+}
+
+.katastr-status i {
+    font-size: 16px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.katastr-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px 0;
+    font-style: italic;
+    color: var(--text-light);
+}
+
+.katastr-loader .loader-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--accent-light);
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: katastr-spin 1s linear infinite;
+}
+
+@keyframes katastr-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Styl pro posuvník průhlednosti vrstev v bočním panelu */
+.layer-opacity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.layer-opacity-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+.layer-opacity-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+/* ============================================================
+   GOOGLE STREET VIEW INTEGRATION
+   ============================================================ */
+
+/* Aktivní stav rozšířeného panelu */
+.panel.streetview-active {
+    width: 600px !important;
+}
+
+/* Skrytí běžného obsahu při aktivním Street View */
+.panel.streetview-active .panel-content {
+    display: none !important;
+}
+
+/* Zobrazení Street View panelu */
+.panel.streetview-active #streetview-panel {
+    display: flex !important;
+}
+
+/* Panel Street View */
+#streetview-panel {
+    padding: 16px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    color: #333333;
+}
+
+.streetview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding-bottom: 10px;
+}
+
+.streetview-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.streetview-title i {
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.streetview-title h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    color: #333333;
+}
+
+.streetview-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Tlačítko Mapy.cz */
+.btn-mapy-cz {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(273deg, #34d313 -2.71%, #1eae00 82.77%);
+    /* Přesný gradient z konzole */
+    color: #ffffff !important;
+    flex: 0 0 auto;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    /* Zaoblení odpovídající vzoru */
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: filter 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.btn-mapy-cz span {
+    color: #ffffff !important;
+    /* Vynucení bílé barvy pro text */
+    font-weight: 700;
+}
+
+.btn-mapy-cz:hover {
+    filter: brightness(1.06);
+    /* Jemné zesvětlení gradientu při najetí */
+    box-shadow: 0 4px 8px rgba(30, 174, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-mapy-cz:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Tlačítko Google Mapy */
+.btn-google-maps {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e8f0fe;
+    color: #1a73e8 !important;
+    border: none;
+    flex: 0 0 auto;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    /* Stejné zaoblení jako u ostatních tlačítek */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    transition: filter 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.btn-google-maps span {
+    color: #1a73e8 !important;
+    font-weight: 600;
+}
+
+.btn-google-maps:hover {
+    filter: brightness(0.96);
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.15);
+    transform: translateY(-1px);
+}
+
+.btn-google-maps:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Tlačítko Zavřít ve stylu zrušení v aplikaci */
+.btn-streetview-close-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 4px;
+    /* Odpovídá standardním tlačítkům v aplikaci */
+    border: none !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    line-height: 1;
+}
+
+.btn-streetview-close-danger i {
+    font-size: 14px;
+    color: #991b1b !important;
+}
+
+.btn-streetview-close-danger:hover {
+    background-color: #fecaca !important;
+    color: #991b1b !important;
+}
+
+.btn-streetview-close-danger:active {
+    transform: scale(0.97);
+}
+
+.streetview-container {
+    flex: 1;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(54, 140, 84, 0.2);
+    background: #e8e8ee;
+    position: relative;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#streetview-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Tlačítko v mapě pod průhledností */
+.streetview-btn-standalone {
+    margin-top: 8px !important;
+    transition: margin-top 0.22s ease !important;
+}
+
+.streetview-btn-standalone.shifted {
+    margin-top: 152px !important;
+}
+
+/* Nástroje – container (leaflet-control, NE leaflet-bar – aby se neaplikoval width:28px na button) */
+.map-tools-control {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible !important;
+}
+
+/* Tlačítko Nástroje – <button>, zcela mimo .leaflet-bar a pravidla */
+.map-tools-toggle-btn {
+    position: relative;
+    text-align: center;
+    display: block;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    color: #555;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    outline: none;
+    width: 114px !important;
+    padding: 0 10px;
+    height: 28px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.map-tools-toggle-btn:hover {
+    background-color: white !important;
+    color: var(--accent) !important;
+    opacity: 1 !important;
+}
+
+.map-tools-toggle-btn.active {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    opacity: 1 !important;
+}
+
+.map-tools-toggle-btn.active:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    opacity: 1 !important;
+    filter: brightness(0.9);
+}
+
+.map-tools-toggle-btn span {
+    color: inherit;
+    display: inline-block;
+    line-height: 26px;
+    /* 28px minus borders */
+}
+
+.map-tools-toggle-btn i {
+    font-size: 13px;
+    color: inherit;
+    position: absolute;
+    top: 50%;
+}
+
+.map-tools-toggle-btn i.ph-wrench {
+    left: 10px;
+    transform: translateY(-50%);
+}
+
+.map-tools-toggle-btn i.tools-caret {
+    right: 10px;
+    transition: transform 0.22s ease;
+    transform: translateY(-50%);
+}
+
+.map-tools-toggle-btn.active i.tools-caret {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Skupina nástrojů – vysunuje se dolů jako volné tlačítka, bez pozadí */
+.map-tools-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    transition: max-height 0.28s ease, opacity 0.22s ease, padding-top 0.2s ease;
+}
+
+.map-tools-group.open {
+    max-height: 200px;
+    opacity: 1;
+    padding-top: 6px;
+}
+
+.map-tools-group .leaflet-control {
+    margin: 0 !important;
+}
+
+
+.leaflet-control-streetview-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px;
+    color: #555 !important;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.leaflet-control-streetview-toggle:hover {
+    background-color: #f4f4f4 !important;
+    color: #111 !important;
+}
+
+.leaflet-control-streetview-toggle.active,
+.leaflet-control-streetview-toggle.active:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+}
+
+/* Custom marker na mapě představující polohu Street View (Pegmana) */
+.pegman-map-marker {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.pegman-marker-pin {
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--accent);
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin-left: -16px;
+    margin-top: -16px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background-color 0.2s;
+    cursor: grab;
+}
+
+.pegman-marker-pin:active {
+    cursor: grabbing;
+}
+
+.pegman-marker-pin i {
+    color: white;
+    font-size: 18px;
+    transform: rotate(45deg);
+    /* Narovnání Phosphor ikony */
+}
+
+/* Stín pod markerem panáčka na mapě */
+.pegman-map-marker::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    bottom: -4px;
+    left: 50%;
+    margin-left: -7px;
+    z-index: -1;
+    filter: blur(1px);
+}
+
+/* Street View Placeholder when API key is missing */
+.streetview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    height: 100%;
+    box-sizing: border-box;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    border: 1px dashed rgba(54, 140, 84, 0.2);
+}
+
+.streetview-placeholder p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+    color: #444;
+}
+
+.streetview-placeholder .placeholder-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.streetview-placeholder .placeholder-actions a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 6px;
+    /* Výjimka pro prolinky na mapy */
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.streetview-placeholder .placeholder-actions a:hover {
+    transform: translateY(-1px);
+}
+
+.streetview-placeholder .placeholder-tip {
+    font-size: 11px !important;
+    color: #888 !important;
+    background: #fcfcfc;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.streetview-placeholder code {
+    background: #f1f1f1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--accent);
+}
+
+/* Elevation markers */
+.elevation-marker-tooltip {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #50c878 !important;
+    border-radius: 4px !important;
+    padding: 2px 5px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #50c878 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+.elevation-marker-tooltip::before {
+    border-top-color: #50c878 !important;
+}
+
+/* Override Leaflet Geoman default blue vertex markers (edit mode & drawing phase) */
+.leaflet-container .leaflet-marker-pane .leaflet-pm-vertex,
+.leaflet-container .leaflet-pm-vertex,
+.leaflet-pm-vertex,
+path.leaflet-pm-vertex,
+.leaflet-container .leaflet-marker-pane .marker-icon {
+    background-color: #fff !important;
+    border: 2px solid #e63946 !important;
+    fill: #fff !important;
+    stroke: #e63946 !important;
+    stroke-width: 2px !important;
+    border-radius: 50% !important;
+    width: 10px !important;
+    height: 10px !important;
+    margin-left: -5px !important;
+    margin-top: -5px !important;
+}
+
+/* =========================================
+   VŠEOBECNÉ VYSKAKOVACÍ OKNA (POPUPS) - MAWIS STYL
+========================================= */
+.leaflet-popup-content-wrapper {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    border: 1px solid #e0e0e0;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    line-height: 1.4;
+}
+
+/* Pokud má popup hlavičku (např. h3 nebo div.popup-header) */
+.leaflet-popup-content h3,
+.leaflet-popup-content .popup-header {
+    background: #f5f5f5;
+    padding: 10px 12px;
+    margin: 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.leaflet-popup-content .popup-body {
+    padding: 12px;
+}
+
+/* =========================================
+   NÁSTROJ SOUŘADNICE A VÝŠKA
+========================================= */
+.coords-leaflet-popup .leaflet-popup-content-wrapper {
+    /* Dědí z globálního nastavení výše */
+}
+
+.coords-leaflet-popup .leaflet-popup-content {
+    margin: 0;
+    width: 100% !important;
+}
+
+.coords-leaflet-popup .leaflet-popup-close-button {
+    display: none !important;
+    /* Skrýt výchozí křížek Leafletu */
+}
+
+.coords-popup-container {
+    padding: 14px 16px;
+    font-family: 'Roboto', sans-serif;
+    color: var(--text);
+    position: relative;
+}
+
+.coords-popup-close-btn {
+    width: 24px;
+    height: 24px;
+    background: rgba(230, 57, 70, 0.1);
+    color: #e63946;
+    border: none;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.coords-popup-close-btn:hover {
+    background: #e63946;
+    color: white;
+}
+
+.coords-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text-dark);
+    margin-bottom: 10px;
+}
+
+.coords-popup-header strong {
+    font-weight: 700;
+}
+
+.coords-popup-section {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.coords-popup-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.06);
+    margin: 8px 0;
+}
+
+.coords-popup-section-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.coords-popup-val {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: #555;
+    white-space: nowrap;
+}
+
+#coords-popup-elevation {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.coords-copy-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    color: var(--text-light);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: 16px;
+}
+
+.coords-copy-btn:hover {
+    background: rgba(80, 200, 120, 0.1);
+    color: var(--accent);
+    border-color: rgba(80, 200, 120, 0.3);
+}
+
+.coords-copy-btn.copied-success {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+
+
+.measure-area-label {
+    background: var(--accent) !important;
+    color: #fff !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    border: 2px solid #fff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: max-content !important;
+    height: max-content !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+}
+
+/* Measure labels - segment distance */
+.leaflet-tooltip.measure-seg-lbl {
+    background: #222;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+.leaflet-tooltip.measure-seg-lbl::before {
+    display: none;
+}
+
+/* Measure labels - area */
+.leaflet-tooltip.measure-area-lbl {
+    background: #50c878;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.leaflet-tooltip.measure-area-lbl::before {
+    display: none;
+}
+
+/* Geoman - lomové body (vertex markers) - červené s bílou výplní */
+.leaflet-pm-vertex path {
+    fill: #fff !important;
+    stroke: #e63946 !important;
+    stroke-width: 2 !important;
+}
+
+.leaflet-pm-draggable path {
+    fill: #fff !important;
+    stroke: #e63946 !important;
+    stroke-width: 2 !important;
+}
+
+/* Geoman - "Přidat bod" a akční tlačítka - sladit s naším designem */
+.leaflet-pm-toolbar .pm-action-add-vertex button,
+.leaflet-pm-toolbar .pm-action-continue button {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border-color: var(--accent) !important;
+}
+
+.leaflet-pm-actions .action-finishMode,
+.leaflet-pm-actions .action-cancel {
+    border-radius: 4px !important;
+}
+
+/* ===== Geoman - kompletní přepis stylů ===== */
+
+/* Vertex v edit módu (div markers) */
+.leaflet-pm-vertex {
+    background: #fff !important;
+    border: 2px solid #e63946 !important;
+    border-radius: 50% !important;
+    width: 10px !important;
+    height: 10px !important;
+    margin-left: -5px !important;
+    margin-top: -5px !important;
+    cursor: grab !important;
+}
+
+.leaflet-pm-vertex:hover {
+    background: #e63946 !important;
+}
+
+/* Středové body (Přidat bod) v edit módu */
+.leaflet-pm-midmarker {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 2px dashed #e63946 !important;
+    border-radius: 50% !important;
+    width: 8px !important;
+    height: 8px !important;
+    margin-left: -4px !important;
+    margin-top: -4px !important;
+    opacity: 0.8;
+    cursor: copy !important;
+}
+
+.leaflet-pm-midmarker:hover {
+    opacity: 1;
+    border-style: solid !important;
+    background: #fff !important;
+}
+
+/* Geoman draw mode cursor/snap marker */
+.leaflet-container .leaflet-marker-pane .cursor-marker,
+.leaflet-container .cursor-marker,
+div.cursor-marker {
+    background-color: #fff !important;
+    border: 2px solid #e63946 !important;
+    border-radius: 50% !important;
+    width: 12px !important;
+    height: 12px !important;
+    margin-left: -6px !important;
+    margin-top: -6px !important;
+    opacity: 1 !important;
+}
+
+/* Ensure no default icon image is shown if it happens to be an img */
+img.cursor-marker {
+    display: none !important;
+}
+
+
+
+
+/* ========================
+   Inline styles cleanup – přesunuté z index.html
+======================== */
+
+/* SVG definice kamer (skryto) */
+.svg-camera-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* Cesium container (přepíná JS) */
+#cesiumContainer {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Swipe komponenty (přepíná JS) */
+#swipe-divider {
+    display: none;
+}
+
+#swipe-controls-container {
+    display: none;
+}
+
+.swipe-year-row {
+    display: none;
+}
+
+/* Panel header brand logo mezera */
+.panel-header .brand-logo {
+    margin-right: 8px;
+}
+
+/* Nápověda – ikony s mezerou */
+.map-controls-hint i {
+    margin-right: 5px;
+}
+
+/* Layer group header – flex layout */
+.layer-group-header .group-header-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Master checkbox ve skupině */
+.group-master-checkbox {
+    accent-color: var(--text-dark);
+    margin: 0;
+    cursor: pointer;
+}
+
+/* Počítadlo skupiny vrstev */
+.group-counter {
+    font-size: 10px;
+    color: var(--text-light);
+    font-weight: normal;
+    margin-left: auto;
+}
+
+/* Info overlay (přepíná JS) */
+.info-overlay {
+    display: none;
+}
+
+/* Detail view (přepíná JS) */
+#detail-view {
+    display: none;
+}
+
+/* Edit form (přepíná JS) */
+#edit-form {
+    display: none;
+}
+
+/* Street view panel (přepíná JS) */
+#streetview-panel {
+    display: none;
+}
+
+/* Skupiny formuláře (přepíná JS) */
+#group-obj-floor-type,
+#group-obj-type-generic,
+#group-obj-camera-type {
+    display: none;
+}
+
+/* Foto preview container (přepíná JS) */
+#edit-photo-preview-container {
+    margin-top: 10px;
+    display: none;
+}
+
+/* Foto preview obrázek */
+#edit-photo-preview {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 6px;
+    border: 1px solid var(--accent-border);
+    display: block;
+}
+
+/* Tlačítko smazání fotky */
+#btn-delete-photo {
+    margin-top: 5px;
+    font-size: 11px;
+    padding: 4px 8px;
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Katastr výsledky – detail title řádek */
+.katastr-result .detail-title-row {
+    margin-bottom: 10px;
+    gap: 6px;
+}
+
+/* Katastr geom ikona */
+#katastr-geom-icon {
+    font-size: 15px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+/* Katastr parcel title */
+#katastr-parcel-title {
+    font-size: 13px;
+    margin: 0;
+    flex: 1;
+}
+
+/* Tlačítko zrušení zvýraznění (přepíná JS) */
+#btn-katastr-clear-highlight {
+    display: none;
+    width: auto;
+    margin: 0 0 12px 0;
+    padding: 5px 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* DTM selektor (přepíná JS) */
+#katastr-dtm-selector {
+    display: none;
+    margin-bottom: 10px;
+}
+
+/* DTM selektor nadpis */
+.dtm-selector-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+/* DTM selektor seznam */
+#katastr-dtm-selector-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Katastr odkaz – bez podtržení */
+#katastr-link {
+    text-decoration: none;
+}
+
+/* Katastr odkaz wrapper */
+.katastr-link-wrapper {
+    margin-top: 20px;
+}
+
+/* Detail ikona */
+#detail-icon {
+    font-size: 18px;
+    color: var(--accent);
+}
+
+/* Ruian detail header */
+#ruian-detail .detail-header {
+    padding: 0;
+    margin-bottom: 15px;
+}
+
+/* Panel sekce header */
+.panel-section-header {
+    margin-bottom: 15px;
+}
+
+/* Katastr dotaz selector */
+#data-query-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Data sekce nadpis */
+.data-section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.8;
+}
+
+/* Data sekce label ikona */
+.data-section-label i {
+    font-size: 14px;
+    color: var(--accent);
+}
+
+/* Přepínač v data kartě – kompaktnější */
+#data-query-selector .notes-switcher {
+    margin-bottom: 0 !important;
+    width: 100%;
+}
+
+/* Label tlačítka v data přepínači */
+#data-query-selector .notes-switch-btn {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Data QGIS container */
+#data-qgis-container {
+    margin-bottom: 20px;
+}
+
+/* Data QGIS header řádek */
+.data-qgis-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+/* Obnovit objekty tlačítko */
+#btn-refresh-objects {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 7px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+#btn-refresh-objects:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Nástroje – sekce header */
+.notes-section .section-intro {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+/* Kreslení – form-group mezera */
+.draw-settings .form-group {
+    margin-bottom: 12px;
+}
+
+/* Kreslení – flex řádek tlačítek */
+.draw-btn-row {
+    display: flex;
+    gap: 8px;
+}
+
+/* Kreslení – flex tlačítka */
+.draw-btn-row .tab-action-btn {
+    flex: 1;
+}
+
+/* Zrušit kreslení (přepíná JS) */
+#btn-draw-cancel {
+    display: none;
+    flex: 1;
+}
+
+/* Kreslení – nápověda */
+.draw-hint {
+    margin-top: 15px;
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+/* Kreslení – seznam výkresů */
+#draw-list {
+    margin-top: 15px;
+}
+
+/* Profil – loading stav */
+#elevation-profile-loading {
+    display: none;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* Profil – loader řádek */
+.elevation-loading-row {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Profil – loading text */
+.elevation-loading-text {
+    margin: 0;
+    color: var(--text-dark);
+}
+
+/* Profil – kontejner (přepíná JS) */
+#elevation-profile-container {
+    display: none;
+}
+
+/* Profil – stat margin */
+#elevation-profile-container .elevation-stats {
+    margin-bottom: 15px;
+}
+
+/* Stat ikona barvy */
+.stat-icon--accent {
+    color: var(--accent);
+}
+
+.stat-icon--green {
+    color: #4CAF50;
+}
+
+.stat-icon--blue {
+    color: #2196F3;
+}
+
+/* Graf container margin */
+#elevation-profile-container .chart-container {
+    margin-bottom: 15px;
+}
+
+/* Profil – flex tlačítka */
+.elevation-btn-row {
+    display: flex;
+    gap: 8px;
+}
+
+.elevation-btn-row .tab-action-btn {
+    flex: 1;
+}
+
+/* Viewshed – tlačítko Zvolit bod */
+#btn-viewshed-start {
+    margin-bottom: 15px;
+}
+
+/* Viewshed – status panel (přepíná JS) */
+#viewshed-status {
+    display: none;
+    padding: 10px;
+    background: rgba(54, 140, 84, 0.1);
+    border: 1px solid rgba(54, 140, 84, 0.2);
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--accent);
+}
+
+/* Viewshed – spinner ikona */
+.viewshed-spinner-icon {
+    font-size: 20px;
+    display: block;
+    margin: 0 auto 5px;
+}
+
+/* Viewshed – výsledky (přepíná JS) */
+#viewshed-result {
+    display: none;
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
+    background: #fff;
+}
+
+/* Viewshed – výsledky nadpis */
+.viewshed-result-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+/* Viewshed – výsledky hodnoty */
+.viewshed-result-values {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dark);
+}
+
+/* Viewshed – smazat (přepíná JS) */
+#btn-clear-viewshed {
+    display: none;
+    width: 100%;
+}
+
+/* ========================
+   SOLÁRNÍ POTENCIÁL (Měřit)
+======================== */
+#solar-status {
+    display: none;
+    padding: 12px;
+    background: rgba(54, 140, 84, 0.1);
+    border: 1px solid rgba(54, 140, 84, 0.2);
+    border-radius: 6px;
+    margin-top: 12px;
+    font-size: 13px;
+    text-align: center;
+    color: var(--accent);
+}
+
+#solar-result {
+    display: none;
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 6px;
+    background: #fff;
+}
+
+#btn-clear-solar {
+    display: none;
+    margin-top: 12px;
+    width: 100%;
+}
+
+.solar-chart-container {
+    margin-top: 16px;
+    height: 180px;
+    width: 100%;
+    position: relative;
+}
+
+/* Formulář – form group viditelnost */
+.viewshed-form-group,
+#notes-viewshed-section .form-group {
+    margin-bottom: 15px;
+}
+
+/* Viewshed – tip text */
+.viewshed-tip {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+/* Tisk – miniaturní obal s mezerami */
+.print-miniature-container {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* Tisk – toggle preview tlačítko */
+#btn-toggle-print-preview {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(54, 140, 84, 0.05);
+    border: 1px solid rgba(54, 140, 84, 0.15);
+    color: var(--text);
+    margin-bottom: 0;
+    padding: 12px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    font-size: 13px;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+/* Tisk – toggle tlačítko leva strana */
+.toggle-print-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#toggle-print-img-icon {
+    color: var(--text);
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+#toggle-print-icon {
+    color: var(--text);
+    transition: transform 0.2s, color 0.2s;
+}
+
+/* Tisk – miniatura wrapper (přepíná JS) */
+#print-miniature-wrapper {
+    width: 100%;
+    height: 240px;
+    background: #f8f9fa;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.02);
+    margin-top: 8px;
+}
+
+/* Tisk – miniatura papír */
+#print-miniature-paper {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Tisk – miniatura mapa */
+#print-miniature-map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Tisk – miniatura nadpis */
+#mini-title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    font-size: 8px;
+    font-weight: 800;
+    padding: 4px;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--accent);
+    z-index: 2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+/* Tisk – miniatura souřadnice */
+#mini-coords {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(255, 255, 255, 0.95);
+    font-size: 5px;
+    color: var(--text-light);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 2px 4px;
+    border-radius: 2px;
+    z-index: 2;
+}
+
+/* Tisk – miniatura legenda */
+#mini-legend {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(255, 255, 255, 0.95);
+    font-size: 5px;
+    color: var(--text-dark);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 2px 4px;
+    border-radius: 2px;
+    z-index: 2;
+}
+
+/* Measure – controls mezera */
+.measure-controls {
+    margin-top: 5px;
+}
+
+/* Measure – hint mezery */
+.measure-hint {
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+/* Draw – controls mezera */
+.draw-controls {
+    margin-top: 5px;
+}
+
+/* Draw – tools mezery */
+#notes-measure-section .draw-tools {
+    margin-top: 5px;
+    margin-bottom: 16px;
+}
+
+/* SVG v Street View tlačítkách */
+.btn-google-maps svg,
+.btn-mapy-cz svg {
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.btn-google-maps svg {
+    margin-right: 5px;
+}
+
+.btn-mapy-cz svg {
+    margin-right: 6px;
+}
+
+
+/* ========================
+   Skupiny vrstev – barevné odlišení
+======================== */
+
+.layer-group-header {
+    --group-bg: rgba(54, 140, 84, 0.07);
+    --group-color: rgb(34, 100, 60);
+}
+
+#group-katastr {
+    --group-bg: rgba(54, 140, 84, 0.07);
+    --group-color: rgb(34, 100, 60);
+}
+
+#group-rizika {
+    --group-bg: rgba(220, 53, 69, 0.08);
+    --group-color: rgb(180, 20, 35);
+}
+
+#group-krajinne {
+    --group-bg: rgba(132, 204, 22, 0.08);
+    --group-color: rgb(101, 163, 13);
+}
+
+#group-tematicke {
+    --group-bg: rgba(13, 110, 253, 0.08);
+    --group-color: rgb(10, 80, 200);
+}
+
+#group-site {
+    --group-bg: rgba(212, 175, 55, 0.15);
+    --group-color: rgb(150, 115, 0);
+}
+
+#group-pudorysy {
+    --group-bg: rgba(253, 126, 20, 0.08);
+    --group-color: rgb(200, 85, 0);
+}
+
+#group-zakladni {
+    --group-bg: rgba(108, 117, 125, 0.1);
+    --group-color: rgb(75, 80, 85);
+}
+
+#group-historicke {
+    --group-bg: rgba(139, 69, 19, 0.08);
+    --group-color: rgb(100, 50, 15);
+}
+
+#group-3d {
+    --group-bg: rgba(23, 162, 184, 0.08);
+    --group-color: rgb(15, 110, 125);
+}
+
+/* Rozbalená skupina – header pozadí */
+.layer-group-header:has(+ .layer-group:not(.is-collapsed)),
+.layer-group-header:has(+ .basemap-thumbnails:not(.is-collapsed)) {
+    background: var(--group-bg);
+}
+
+/* Hover a rozbalený text/ikony */
+.layer-group-header:hover span,
+.layer-group-header:hover i,
+.layer-group-header:hover,
+.layer-group-header:has(+ *:not(.is-collapsed)) span,
+.layer-group-header:has(+ *:not(.is-collapsed)) i,
+.layer-group-header:has(+ *:not(.is-collapsed)) {
+    color: var(--group-color) !important;
+}
+
+/* Checkbox – zelený accent při rozbalení/hoveru */
+.layer-group-header:hover .group-master-checkbox,
+.layer-group-header:has(+ *:not(.is-collapsed)) .group-master-checkbox {
+    accent-color: var(--group-color) !important;
+}
+
+.legend-btn[disabled],
+button[disabled].legend-btn {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Subgroups (Městský hluk, Hluk ze silnic) */
+.layer-group label.subgroup-child {
+    padding-left: 44px !important;
+    display: none !important;
+}
+
+.layer-group label.subgroup-child.is-visible {
+    display: flex !important;
+}
+
+.layer-group label.subgroup-child::before {
+    left: 28px;
+}
+
+.layer-group label.subgroup-child::after {
+    left: 28px;
+}
+
+.layer-group label.subgroup-parent i.subgroup-toggle {
+    margin-left: auto;
+    padding-right: 10px;
+    transition: transform 0.2s ease;
+    font-size: 14px;
+}
+
+.layer-group label.subgroup-parent i.subgroup-toggle.is-collapsed-icon {
+    transform: rotate(-90deg);
+}
+
+/* --- Katastr UI Panel --- */
+.parcel-info-panel {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: stretch;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    font-size: 12px;
+    font-family: Roboto, sans-serif;
+    height: 32px;
+    pointer-events: auto;
+    white-space: nowrap;
+    width: 380px;
+    /* PEVNA SIRKA ABY NEPOSKAKOVAL */
+}
+
+.parcel-info-panel.hidden {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+    pointer-events: none;
+}
+
+/* Leva polovina - hover */
+.parcel-hover-half {
+    flex: 0 0 160px;
+    /* Pevna sirka = 160px */
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #f8f9fa;
+    color: #666666;
+    font-weight: 500;
+    border-right: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.parcel-hover-half i {
+    font-size: 13px;
+    color: var(--accent);
+    /* Opraveno na spravnou zelenou */
+    flex-shrink: 0;
+}
+
+#hover-parcel-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Prava polovina - vybrana parcela */
+.parcel-selected-half {
+    flex: 1;
+    /* Zbytek mista (220px) */
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Text vlevo, button vpravo */
+    gap: 8px;
+    background: white;
+    color: #333333;
+    font-weight: 600;
+    transition: background 0.2s;
+    overflow: hidden;
+}
+
+.parcel-selected-half.has-selection {
+    background: rgba(54, 140, 84, 0.08);
+    /* Opraveno na var(--accent) s alfa kanalem */
+}
+
+.parcel-selected-half .text-muted {
+    color: #888888;
+    font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.parcel-selected-half .parcel-selected-icon {
+    font-size: 13px;
+    color: #e63946;
+    flex-shrink: 0;
+}
+
+/* Tlacitko Rozmery - co nejjednodussi bez moznych problemu */
+.dimensions-btn {
+    display: block;
+    position: relative;
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+    color: #555;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    outline: none;
+    width: 90px;
+    height: 28px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.dimensions-btn span {
+    color: inherit;
+    display: inline-block;
+    line-height: 26px;
+    padding-left: 12px;
+    /* make room for icon on left */
+}
+
+.dimensions-btn i {
+    font-size: 13px;
+    color: inherit;
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    transform: translateY(-50%);
+}
+
+.dimensions-btn:hover:not(:disabled) {
+    background-color: white !important;
+    color: var(--accent) !important;
+    /* Opraveno na spravnou zelenou */
+    opacity: 1 !important;
+}
+
+.dimensions-btn.active {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    opacity: 1 !important;
+}
+
+.dimensions-btn.active:hover {
+    background-color: var(--accent) !important;
+    color: white !important;
+    border-color: var(--accent) !important;
+    filter: brightness(0.9);
+}
+
+.dimensions-btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+}
+
+/* Skryvani rozmeru geometrie (koty) - zapina se tridou na #map */
+#map:not(.show-parcel-dimensions) .geom-length-label-wrapper {
+    display: none !important;
+}
+
+/* ── DTM zvýraznění objektu ── */
+@keyframes dtm-ring-pulse {
+    0%   { opacity: 0.9; transform: scale(1); }
+    50%  { opacity: 0.25; transform: scale(1.4); }
+    100% { opacity: 0.9; transform: scale(1); }
+}
+
+@keyframes dtm-pulse {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* Pulzující vnější obrys markeru */
+.dtm-highlight-ring {
+    animation: dtm-ring-pulse 1.8s ease-in-out infinite;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+
+/* Vnitřní bod - hover efekt */
+.dtm-highlight-dot {
+    cursor: pointer !important;
+    transition: transform 0.15s ease;
+    transform-origin: center;
+    transform-box: fill-box;
+}
+.dtm-highlight-dot:hover {
+    transform: scale(1.6);
+}
+
+/* Kompatibilita - původní třída */
+.dtm-highlight-geom {
+    animation: dtm-pulse 1.6s ease-in-out infinite;
+}
+/* ============================================================
+   PŮDORYSY MODAL (EXCALIDRAW)
+   ============================================================ */
+
+.floorplan-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.floorplan-modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.floorplan-modal {
+    background: white;
+    width: 95vw;
+    height: 95vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.floorplan-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.floorplan-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.floorplan-title i {
+    font-size: 20px;
+}
+
+.floorplan-tabs {
+    display: flex;
+    background: #e2e8f0;
+    padding: 4px;
+    border-radius: 6px;
+    gap: 2px;
+}
+
+.floorplan-tabs .draw-tool-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.floorplan-tabs .draw-tool-btn:hover {
+    color: #333;
+}
+
+.floorplan-tabs .draw-tool-btn.active {
+    background: white;
+    color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.floorplan-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.floorplan-canvas-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: white;
+}

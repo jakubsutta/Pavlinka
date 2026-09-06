@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pavlínka</title>
+  <!-- Google Fonts-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Leaflet + Phosphor icons-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- CSS styles-->
+  <link rel="stylesheet" href="/css/style.css?v=6">
+  <link rel="stylesheet" href="/css/state_style.css?v=6">
+  <link rel="stylesheet" href="/css/status.css?v=6">
+  <link rel="stylesheet" href="/css/parcel.css?v=1">
+  <link rel="stylesheet" href="/css/legend.css?v=6">
+  <link rel="stylesheet" href="/css/basemap.css?v=13">
+  <link rel="stylesheet" href="/css/form-style.css?v=6">
+  <link rel="stylesheet" href="/css/layers.css?v=6">
+  <link rel="stylesheet" href="/css/elevationProfile.css?v=6">
+  <!-- CesiumJS -->
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.116/Build/Cesium/Cesium.js"></script>
+
+  <!-- Favicon (SVG logo) -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' fill='none' stroke='%2362d488' stroke-width='8'/><circle cx='35' cy='65' r='15' fill='rgb(54, 140, 84)'/></svg>">
+</head>
+
+<body>
+
+  <!-- ---- definice SVG pro kamery ---- -->
+  <svg class="svg-camera-defs" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="camera-srafy-default" width="6" height="6" patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#000000" stroke-width="2" opacity="0.7" />
+      </pattern>
+
+      <pattern id="camera-srafy-1" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#50c878" stroke-width="2" opacity="0.7" />
+      </pattern>
+
+      <pattern id="camera-srafy-2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#ff5722" stroke-width="2" opacity="0.7" />
+      </pattern>
+
+      <pattern id="camera-srafy-3" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="6" stroke="#9c27b0" stroke-width="2" opacity="0.7" />
+      </pattern>
+    </defs>
+  </svg>
+
+  <!-- Preloader -->
+  <div id="app-preloader">
+    <div class="loader-container">
+      <div class="loader"></div>
+      <p>Načítání aplikaci Pavlínka...</p>
+    </div>
+  </div>
+
+  <main class="main-content">
+    <!-- Notifikace pro velký zoom -->
+    <div id="zoom-warning" class="zoom-warning">
+      <i class="ph ph-warning"></i> Musíš se oddálit, aby se mapa zobrazila.
+    </div>
+
+    <div id="map"></div>
+    <div id="cesiumContainer"></div>
+
+    <!-- Nový panel pro parcely (Katastr) -->
+    <div id="parcel-info-panel" class="parcel-info-panel hidden">
+      <div class="parcel-hover-half">
+        <i class="ph-bold ph-cursor"></i> <span id="hover-parcel-text">Najetím vyberte parcelu</span>
+      </div>
+      <div class="parcel-selected-half">
+        <i id="parcel-selected-icon" class="ph-bold ph-map-trifold parcel-selected-icon" style="display:none;"></i>
+        <span id="selected-parcel-text" class="text-muted">Vyberte kliknutím</span>
+        <button id="toggle-dimensions-btn" class="dimensions-btn" disabled>
+          <i class="ph-bold ph-ruler"></i><span>Rozměry</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Časová osa (Timeline) pro archivní mapy -->
+    <div id="timeline-container" class="timeline-hidden">
+      <div class="timeline-box">
+        <div class="timeline-header">
+          <span>Archivní mapa: <strong id="timeline-year-display">2022</strong></span>
+        </div>
+        <div class="timeline-slider-wrapper">
+          <input type="range" id="orto-year-slider" min="1998" max="2022" step="2" value="2022">
+          <div class="timeline-labels">
+            <span>1998*</span>
+            <span>2000</span>
+            <span>2002*</span>
+            <span>2004*</span>
+            <span>2006</span>
+            <span>2008*</span>
+            <span>2010*</span>
+            <span>2012</span>
+            <span>2014</span>
+            <span>2016</span>
+            <span>2018</span>
+            <span>2020</span>
+            <span>2022</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Swipe dělicí linie a táhlo -->
+    <div id="swipe-divider" class="swipe-divider">
+      <div class="swipe-handle">
+        <i class="ph-bold ph-caret-left"></i>
+        <i class="ph-bold ph-caret-right"></i>
+      </div>
+    </div>
+
+    <!-- Plovoucí panel výběru map pro Swipe -->
+    <div id="swipe-controls-container" class="swipe-controls-container">
+      <div class="swipe-control-group">
+        <label for="swipe-select-left">Levá strana</label>
+        <select id="swipe-select-left" class="swipe-map-select"></select>
+        <div id="swipe-year-row-left" class="swipe-year-row">
+          <input type="range" id="swipe-archiv-slider-left" min="1998" max="2022" step="2" value="2022">
+          <span id="swipe-year-label-left">2022</span>
+        </div>
+      </div>
+      <div class="swipe-separator">
+        <i class="ph ph-arrows-left-right"></i>
+      </div>
+      <div class="swipe-control-group">
+        <label for="swipe-select-right">Pravá strana</label>
+        <select id="swipe-select-right" class="swipe-map-select"></select>
+        <div id="swipe-year-row-right" class="swipe-year-row">
+          <input type="range" id="swipe-archiv-slider-right" min="1998" max="2022" step="2" value="2010">
+          <span id="swipe-year-label-right">2010</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Data Loader (Spinner) -->
+    <div id="map-loader" class="hidden">
+      <div class="loader-container-mini">
+        <div class="loader"></div>
+        <p>Načítám...</p>
+      </div>
+    </div>
+
+    <!-- 3D Navigation Controls -->
+    <div id="cesium-navigation" class="cesium-nav-hidden">
+      <div class="nav-group">
+        <span class="nav-label">Pohyb</span>
+        <button id="nav-move-up" title="Posunout nahoru"><i class="ph ph-caret-up"></i></button>
+        <div class="nav-row">
+          <button id="nav-move-left" title="Posunout doleva"><i class="ph ph-caret-left"></i></button>
+          <button id="nav-move-down" title="Posunout dolů"><i class="ph ph-caret-down"></i></button>
+          <button id="nav-move-right" title="Posunout doprava"><i class="ph ph-caret-right"></i></button>
+        </div>
+      </div>
+      <div class="nav-group">
+        <span class="nav-label">Otáčení</span>
+        <div class="nav-row">
+          <button id="nav-rotate-left" title="Otočit doleva"><i class="ph ph-arrow-counter-clockwise"></i></button>
+          <button id="nav-rotate-right" title="Otočit doprava"><i class="ph ph-arrow-clockwise"></i></button>
+        </div>
+      </div>
+      <div class="nav-group">
+        <span class="nav-label">Náklon</span>
+        <div class="nav-row">
+          <button id="nav-tilt-up" title="Naklonit nahoru"><i class="ph ph-arrow-fat-line-up"></i></button>
+          <button id="nav-tilt-down" title="Naklonit dolů"><i class="ph ph-arrow-fat-line-down"></i></button>
+        </div>
+      </div>
+    </div>
+    <!-- Indikátor aktivních skupin -->
+    <div id="active-groups-indicator" class="active-groups-indicator"></div>
+    <!-- 
+    ---- HLAVNÍ PANEL ---- 
+    -->
+    <aside id="right-panel" class="panel">
+      <div id="panel-resizer" class="panel-resizer" title="Změnit šířku panelu"></div>
+      <button id="toggle-panel-btn">◀</button>
+
+      <!-- ===== IKONY PRO ZAVŘENÝ PANEL ===== -->
+      <nav class="collapsed-tab-nav">
+        <div class="collapsed-logo" title="Pavlínka v 1.0">
+          <div class="brand-logo"></div>
+        </div>
+
+        <div class="collapsed-nav-buttons">
+          <button class="tab-btn active" data-tab="vrstvy" title="Vrstvy"><i class="ph ph-stack"></i></button>
+          <button class="tab-btn" data-tab="hledat" title="Hledat"><i class="ph ph-magnifying-glass"></i></button>
+          <button class="tab-btn" data-tab="pozemek" title="Pozemek"><i class="ph-bold ph-layout"></i></button>
+          <button class="tab-btn" data-tab="tisk" title="Tisk"><i class="ph ph-printer"></i></button>
+          <button class="tab-btn" data-tab="poznamky" title="Měřit"><i class="ph ph-pencil-ruler"></i></button>
+          <button class="tab-btn" data-tab="data" title="Data"><i class="ph ph-database"></i></button>
+        </div>
+
+        <div class="collapsed-footer">
+          © JŠ
+        </div>
+      </nav>
+
+      <div class="panel-content">
+
+        <div class="panel-header">
+          <div class="panel-header-title">
+            <div class="brand-logo"></div>
+            <h1>Pavlínka</h1>
+          </div>
+          <button class="btn btn-update" id="project-status-btn">Aktualizace</button>
+        </div>
+
+        <!-- ===== ZÁLOŽKY NAVIGACE ===== -->
+        <nav class="tab-nav" id="tab-nav">
+          <button class="tab-btn active" data-tab="vrstvy" title="Vrstvy">
+            <i class="ph ph-stack"></i>
+            <span>Vrstvy</span>
+          </button>
+          <button class="tab-btn" data-tab="hledat" title="Hledat">
+            <i class="ph ph-magnifying-glass"></i>
+            <span>Hledání</span>
+          </button>
+          <button class="tab-btn" data-tab="pozemek" title="Pozemek">
+            <i class="ph-bold ph-layout"></i>
+            <span>Pozemek</span>
+          </button>
+          <button class="tab-btn" data-tab="tisk" title="Tisk">
+            <i class="ph ph-printer"></i>
+            <span>Tisk</span>
+          </button>
+          <button class="tab-btn" data-tab="poznamky" title="Měřit">
+            <i class="ph ph-pencil-ruler"></i>
+            <span>Měření</span>
+          </button>
+          <button class="tab-btn" data-tab="data" title="Data">
+            <i class="ph ph-database"></i>
+            <span>Data</span>
+          </button>
+        </nav>
+
+        <!-- ===== OBSAH ZÁLOŽEK ===== -->
+        <div id="tabs-area">
+
+          <!-- ── VRSTVY ── -->
+          <div class="tab-panel active" id="tab-vrstvy">
+            <div id="layer-manager">
+              <!-- ---- RYCHLÁ NÁPOVĚDA ---- -->
+              <details class="map-hint-help">
+                <summary title="Zobrazit rychlou nápovědu">
+                  Rychlá nápověda
+                </summary>
+                <div class="map-controls-hint"><span><i class="ph-bold ph-caret-double-up"></i>
+                    sbalit / rozbalit skupinu</span>
+                </div>
+                <div class="map-controls-hint"><span><i class="ph ph-gear"></i>
+                    legenda a nastavení vrstvy</span>
+                </div>
+                <div class="map-controls-hint"><span><i class="ph ph-sun"></i>
+                    průhlednost vrstvy</span>
+                </div>
+                <div class="map-controls-hint"><span><i class="ph ph-magnifying-glass-plus"></i>
+                    vycentrovat na vrstvu</span>
+                </div>
+                <div class="map-controls-hint"><span><i class="ph ph-info"></i>
+                    informace o podkladové mapě</span>
+                </div>
+              </details>
+              <!-- ---- WMS VRSTVY ---- -->
+              <h3 class="layer-group-header" id="group-katastr">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-bold ph-selection-inverse"></i> Katastrální vrstvy</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="layer-group is-collapsed">
+                <label><input type="checkbox" id="layer-kn" class="wms-overlay"> <span class="label-text">Hranice parcel
+                    (KN)</span>
+                  <button type="button" class="legend-btn" data-layer="kn"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="layer-charVl" class="wms-overlay"> <span class="label-text">Charakteristika
+                    vlastnictví</span>
+                  <button type="button" class="legend-btn" data-layer="charVl"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="layer-vb" class="wms-overlay"> <span class="label-text">Věcná
+                    břemena</span>
+                  <button type="button" class="legend-btn" data-layer="vb"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="layer-dtm-ti" class="wms-overlay"> <span class="label-text">Technické
+                    sítě</span>
+                  <button type="button" class="legend-btn" data-layer="dtm-ti"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="layer-dtm-zps" class="wms-overlay"> <span class="label-text">Polohová
+                    situace</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="layer-landuse" class="wms-overlay"> <span class="label-text">Využití
+                    pozemků</span>
+                  <button type="button" class="legend-btn" data-layer="landuse"><i class="ph ph-gear"></i></button>
+                </label>
+              </div>
+
+              <h3 class="layer-group-header" id="group-rizika">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-fill ph-cloud-rain"></i> Rizika a ohrožení</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="layer-group is-collapsed">
+                <!-- Subgroup: Městský hluk -->
+                <label class="subgroup-parent">
+                  <input type="checkbox" class="subgroup-master" data-subgroup="mestsky-hluk">
+                  <span class="label-text">Městský hluk</span>
+                  <i class="ph-bold ph-caret-down subgroup-toggle"></i>
+                </label>
+                <label class="subgroup-child mestsky-hluk"><input type="checkbox" id="aglo-hlukDen" class="wms-overlay">
+                  <span class="label-text">Den</span>
+                  <button type="button" class="legend-btn" data-layer="aglo-hlukDen"><i class="ph ph-gear"></i></button>
+                </label>
+                <label class="subgroup-child mestsky-hluk"><input type="checkbox" id="aglo-hlukNoc" class="wms-overlay">
+                  <span class="label-text">Noc</span>
+                  <button type="button" class="legend-btn" data-layer="aglo-hlukNoc"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <!-- Subgroup: Hluk ze silnic -->
+                <label class="subgroup-parent">
+                  <input type="checkbox" class="subgroup-master" data-subgroup="silnice-hluk">
+                  <span class="label-text">Hluk ze silnic</span>
+                  <i class="ph-bold ph-caret-down subgroup-toggle"></i>
+                </label>
+                <label class="subgroup-child silnice-hluk"><input type="checkbox" id="silnice-hlukDen"
+                    class="wms-overlay"> <span class="label-text">Den</span>
+                  <button type="button" class="legend-btn" data-layer="silnice-hlukDen"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+                <label class="subgroup-child silnice-hluk"><input type="checkbox" id="silnice-hlukNoc"
+                    class="wms-overlay"> <span class="label-text">Noc</span>
+                  <button type="button" class="legend-btn" data-layer="silnice-hlukNoc"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="zapluzemi-100" class="wms-overlay"> <span class="label-text">Ohrožení
+                    "stoletou vodou"</span>
+                  <button type="button" class="legend-btn" data-layer="zapluzemi-100"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="povodne-ohrozeni" class="wms-overlay"> <span
+                    class="label-text">Podovodňové ohrožení</span>
+                  <button type="button" class="legend-btn" data-layer="povodne-ohrozeni"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="klima-teplota-30" class="wms-overlay"> <span class="label-text">Dny
+                    nad 30 °C (predikce)</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="klima-srazky" class="wms-overlay"> <span class="label-text">Dny s
+                    +30mm srážkami (predikce)</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="klima-eroze" class="wms-overlay"> <span class="label-text">Ohrožení
+                    půdy větrnou erozí</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="klima-povrch" class="wms-overlay"> <span class="label-text">Max.
+                    teplota povrchu (2016-2021)</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+              </div>
+
+              <h3 class="layer-group-header" id="group-krajinne">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-bold ph-tree"></i> Krajinné vrstvy</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="layer-group is-collapsed">
+                <label><input type="checkbox" id="krajina-zalesnene" class="wms-overlay"> <span
+                    class="label-text">Zalesněné území</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="krajina-vodstvo" class="wms-overlay"> <span
+                    class="label-text">Vodstvo</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="krajina-honitby" class="wms-overlay"> <span
+                    class="label-text">Myslivecké honitby</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="krajina-meliorace" class="wms-overlay"> <span
+                    class="label-text">Meliorace</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+              </div>
+
+              <h3 class="layer-group-header" id="group-tematicke">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-bold ph-traffic-sign"></i> Tematické vrstvy</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="layer-group is-collapsed">
+                <label><input type="checkbox" id="dopravni-info" class="wms-overlay"> <span class="label-text">Dopravní
+                    info</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="dopravni-kamery" class="wms-overlay"> <span
+                    class="label-text">Dopravní kamery</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="turisticke-trasy" class="wms-overlay"> <span
+                    class="label-text">Turistické
+                    trasy</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" id="cyklotrasy" class="wms-overlay"> <span
+                    class="label-text">Cyklotrasy</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+
+
+                <label><input type="checkbox" id="vydejni-boxy" class="wms-overlay"> <span class="label-text">Výdejní
+                    boxy (Z-BOX, Alza...)</span>
+                  <button type="button" class="legend-btn" disabled><i class="ph ph-gear"></i></button>
+                </label>
+              </div>
+
+
+              <!-- ---- QGIS VRSTVY ---- -->
+              <h3 class="layer-group-header" id="group-site">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-bold ph-wave-triangle"></i> Sítě a jiné objekty</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="layer-group is-collapsed">
+                <label>
+                  <input type="checkbox" class="qgis-layer" value="camera_point,camera_view">
+                  <span class="label-text">Venkovní kamery</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="camera" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="camera_point"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer"
+                    value="elektrina_body,elektrina_linie,elektrina_plochy">
+                  <span class="label-text">Elektřina</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="elektrina"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="elektrina"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer"
+                    value="kanalizace_body,kanalizace_linie,kanalizace_plochy">
+                  <span class="label-text">Kanalizace</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="kanalizace"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="kanalizace"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="vodovod_body,vodovod_linie,vodovod_plochy">
+                  <span class="label-text">Vodovod</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="vodovod" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="vodovod"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="plynovod_body,plynovod_linie"> <span
+                    class="label-text">Plynovod</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="plynovod" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="plynovod"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="budovy_linie"> <span
+                    class="label-text">Budovy</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="budovy" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="budovy"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="vybaveni_body,vybaveni_linie,vybaveni_plochy">
+                  <span class="label-text">Užití</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="vybaveni" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="vybaveni"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="ostatni_linie"> <span class="label-text">Hranice
+                    pozemku</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="ostatni" title="Vycentrovat na vrstvu"><i
+                      class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="ostatni"><i class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="pyro_area">
+                  <span class="label-text">Omezení použití pyrotechniky</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="pyro_area"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="pyro_area"><i class="ph ph-gear"></i></button>
+                </label>
+              </div>
+
+              <!-- ---- PŮDORYSY ---- -->
+              <h3 class="layer-group-header" id="group-pudorysy">
+                <div class="group-header-inner">
+                  <input type="checkbox" class="group-master-checkbox">
+                  <span><i class="ph-fill ph-house"></i> Půdorysy</span>
+                  <span class="group-counter"></span>
+                </div>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+
+              <div class="layer-group is-collapsed">
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_basement">
+                  <span class="label-text">Sklep</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_basement"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_basement"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_FirstFloor">
+                  <span class="label-text">1. NP</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_FirstFloor"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_FirstFloor"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_SecondFloor">
+                  <span class="label-text">2. NP</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_SecondFloor"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_SecondFloor"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_roof">
+                  <span class="label-text">Půda/střecha</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_roof"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_roof"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_garage">
+                  <span class="label-text">Garáž</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_garage"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_garage"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_GarageRoof">
+                  <span class="label-text">Garáž - půda/střecha</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_GarageRoof"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_GarageRoof"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+
+                <label><input type="checkbox" class="qgis-layer" value="floorplan_SummerHouse">
+                  <span class="label-text">Altán</span>
+                  <button type="button" class="zoom-to-layer-btn" data-layer="floorplan_SummerHouse"
+                    title="Vycentrovat na vrstvu"><i class="ph ph-magnifying-glass"></i></button>
+                  <button type="button" class="legend-btn" data-layer="floorplan_SummerHouse"><i
+                      class="ph ph-gear"></i></button>
+                </label>
+              </div>
+            </div>
+
+            <hr class="panel-divider">
+            <div id="active-basemap-info-container" class="active-basemap-info-container">
+              <div class="active-basemap-title">
+                Aktivní podklad: <strong id="active-basemap-name">Základní mapa</strong>
+              </div>
+              <button type="button" id="active-basemap-info-btn" class="legend-btn"><i class="ph ph-info"></i></button>
+            </div>
+            <div id="active-basemap-info-content" class="active-basemap-info-content is-collapsed">
+               <!-- Zde se přesune obsah info-overlay přes JS -->
+            </div>
+
+          </div><!-- /tab-vrstvy -->
+<!-- BASEMAP WIDGET STRUCTURE (Moved via JS to Leaflet Control) -->
+<div id="basemap-ui-wrapper" class="basemap-ui-wrapper" style="display:none;">
+    <a href="#" id="basemap-toggle-btn" class="basemap-toggle-btn" title="Změnit mapu">
+        <div class="thumb-img thumb-cuzk" id="current-basemap-thumb"></div>
+        <div class="basemap-overlay-icon">
+            <i class="ph-bold ph-stack"></i>
+        </div>
+    </a>
+    <div id="basemap-expandable-panel" class="basemap-expandable-panel is-hidden">
+
+              <!-- ---- PODKLADOVÉ MAPY ---- -->
+              <h3 class="layer-group-header" id="group-zakladni">
+                <span><i class="ph-fill ph-globe"></i> Základní mapy</span>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="basemap-thumbnails">
+                <!-- osm šedá -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="osm">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Základní mapa</strong>
+                      <p>Vhodná, když nepotřebuješ podklad, nepůsobí totiž rušivě na ostatní vrstvy.</p>
+                      <p>Zobrazuje pouze silnice, hlavní budovy a místní názvy.</p>
+                    </div>
+                    <div class="thumb-img thumb-osm"></div>
+                    <span>Světlá</span>
+                  </div>
+                </label>
+                <!-- základní -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="carto">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Barevná mapa</strong>
+                      <p>Pestrý podklad se silnicemi, lesy a zástavbou.</p>
+                      <p>Slouží k rychlé orientaci ve městě a v krajině.</p>
+                    </div>
+                    <div class="thumb-img thumb-carto"></div>
+                    <span>Základní</span>
+                  </div>
+                </label>
+                <!-- přehledová -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="cuzk_prehledova">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Přehledová mapa</strong>
+                      <p>Detailnější topografická mapa se zobrazením nadmořské výšky.</p>
+                    </div>
+                    <div class="thumb-img thumb-cuzk-prehledova"></div>
+                    <span>Přehledová</span>
+                  </div>
+                </label>
+                <!-- topografická -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="cuzk_topograficka">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Topografická mapa</strong>
+                      <p>Základní mapa ČR.</p>
+                    </div>
+                    <div class="thumb-img thumb-cuzk-topograficka"></div>
+                    <span>Topografická</span>
+                  </div>
+                </label>
+                <!-- esri satelitní -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="google_sat">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Satelitní snímek (Esri)</strong>
+                      <p>Detailní celosvětový satelitní podklad.</p>
+                    </div>
+                    <div class="thumb-img thumb-google-sat"></div>
+                    <span>Satelitní</span>
+                  </div>
+                </label>
+                <!-- letecká čúzk -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="cuzk_orto" checked>
+                  <div class="thumb-card active">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Letecká mapa (ČÚZK)</strong>
+                      <p>Nejaktuálnější ortofotomapa České republiky.</p>
+                    </div>
+                    <div class="thumb-img thumb-cuzk"></div>
+                    <span>Letecká</span>
+                  </div>
+                </label>
+                <!-- letecká msk -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="msk_orto">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-map-trifold"></i>&nbsp;Letecká mapa (MSK)</strong>
+                      <p>Detailní letecká mapa pouze pro MSK kraj. Má lepší rozlišení než mapa ČÚZK.</p>
+                      <p>Je ale starší, byla pořízena v letech 2016-2020.</p>
+                    </div>
+                    <div class="thumb-img thumb-msk"></div>
+                    <span>Letecká MSK</span>
+                  </div>
+                </label>
+                <!-- archiv ortofoto -->
+                <label class="basemap-thumb-label" id="label-orto-archiv">
+                  <input type="radio" name="basemap" value="orto_archiv">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-countdown"></i>&nbsp;Archivní letecké mapy</strong>
+                      <p>Letecké snímky pořízené v letech 1998-2022.</p>
+                      <p>Mají omezenou viditelnost, nebylo vždy pořízeno celé území ČR, proto se některé roky
+                        nemusí načíst. Tyto jsou označené *.</p>
+                      <p>U některých je potřeba se v mapě více oddálit.</p>
+                    </div>
+                    <div class="thumb-img thumb-orto-archiv">
+                    </div>
+                    <span>1998-2022</span>
+                  </div>
+                </label>
+                <!-- orto 50. léta -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="orto50">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-countdown"></i>&nbsp;Historická letecká mapa z 50. let</strong>
+                      <p>Letecké snímkování z let 1953-1955.</p>
+                      <p>Celoplošné pokrytí ČR. Není však úplně přesná, jedná se o neupravenou verzi.</p>
+                    </div>
+                    <div class="thumb-img thumb-orto50"></div>
+                    <span>1953-1955</span>
+                  </div>
+                </label>
+                <!-- orto 1955 MSK -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="msk_orto_1955">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-countdown"></i>&nbsp;Historické ortofoto 1955 (MSK)</strong>
+                      <p>Detailní letecké snímkování MSK kraje z roku 1955.</p>
+                      <p>Již upravená verze, ale mírně posunutá na jihozápad (nepatrně).</p>
+                    </div>
+                    <div class="thumb-img thumb-msk-1955"></div>
+                    <span>1955</span>
+                  </div>
+                </label>
+                <!-- MSK ÚP -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="msk_up">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-city"></i>&nbsp;Územní plány obcí MSK kraje</strong>
+                      <p>Hlavní výkres územního plánu Moravskoslezského kraje.</p>
+                      <p>Je to sice platný ÚP beze změn, ale je velmi zjednodušený a není vždy přesný.</p>
+                    </div>
+                    <div class="thumb-img thumb-msk-up"></div>
+                    <span>Územní plán</span>
+                  </div>
+                </label>
+                <!-- Parcelní mapy -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="parcelni">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-grid-four"></i>&nbsp;Parcelní mapy</strong>
+                      <p>Parcelní mapy ČÚZK. Jednoduše zobrazují jen parcely a parcelní čísla.</p>
+                    </div>
+                    <div class="thumb-img thumb-parcelni"></div>
+                    <span>Parcelní</span>
+                  </div>
+                </label>
+                <!-- dmp -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="dmp">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-mountains"></i>&nbsp;Model povrchu země</strong>
+                      <p>Model zobrazuje pouze model povrchu, nikoliv objektů.</p>
+                    </div>
+                    <div class="thumb-img thumb-dmp"></div>
+                    <span>Povrchová</span>
+                  </div>
+                </label>
+                <!-- slope -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="slope">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-mountains"></i>&nbsp;Mapa sklonu svahu</strong>
+                      <p>Mapa zobrazuje pouze model sklonu svahů.</p>
+                    </div>
+                    <div class="thumb-img thumb-slope"></div>
+                    <span>Sklon svahu</span>
+                  </div>
+                </label>
+                <!-- aspect -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="aspect">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-vector-three"></i>&nbsp;Mapa orientace svahu</strong>
+                      <p>Mapa zobrazuje pouze model orientace svahů ke světovým stranám.</p>
+                    </div>
+                    <div class="thumb-img thumb-aspect"></div>
+                    <span>Orientace</span>
+                  </div>
+                </label>
+              </div>
+
+              <!-- ---- HISTORICKÉ MAPY ---- -->
+              <h3 class="layer-group-header" id="group-historicke">
+                <span><i class="ph-fill ph-clock"></i> Historické mapy</span>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="basemap-thumbnails">
+                <!-- muller M -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="mullerM">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-counter-clockwise"></i>&nbsp;Historická Müllerova mapa
+                        Moravy</strong>
+                      <p>Detailní mapa z let 1712-1716. Vytvořil ji německý kartograf Jan Kryštof Müller.</p>
+                      <p>Na svou dobu velmi podrobná mapa.</p>
+                      <p>Je potřeba se více oddálit, aby se mapa načetla. Někdy se stává, že se historické mapy
+                        nenačtou.</p>
+                    </div>
+                    <div class="thumb-img thumb-mullerM"></div>
+                    <span>1716</span>
+                  </div>
+                </label>
+                <!-- voj. I -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="vojI">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-counter-clockwise"></i>&nbsp;Mapa I. Vojenského
+                        mapování</strong>
+                      <p>Během let 1764-1783 bylo zmapováno Rakousko-Uhersko v měřítku 1:28 800.</p>
+                      <p>Je potřeba se více oddálit, aby se mapa načetla. Někdy se stává, že se historické mapy
+                        nenačtou.</p>
+                    </div>
+                    <div class="thumb-img thumb-vojI"></div>
+                    <span>1764–1768</span>
+                  </div>
+                </label>
+                <!-- Císařské otisky MSK -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="msk_cisar">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-crown"></i>&nbsp;Císařské povinné otisky
+                        (MSK)</strong>
+                      <p>Císařské povinné otisky stabilního katastru pro Moravu a Slezsko. Na svou dobu unikátní a
+                        podrobné dílo.</p>
+                      <p>Je potřeba se více oddálit, aby se mapa načetla. Někdy se stává, že se historické mapy
+                        nenačtou.</p>
+                    </div>
+                    <div class="thumb-img thumb-msk-cisar"></div>
+                    <span>1830–1836</span>
+                  </div>
+                </label>
+                <!-- voj. II -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="vojII">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-counter-clockwise"></i>&nbsp;Mapa II. Vojenského
+                        mapování</strong>
+                      <p>Během let 1836-1852 bylo zmapováno Rakousko-Uhersko v měřítku 1:28 800.</p>
+                      <p>Je potřeba se více oddálit, aby se mapa načetla. Někdy se stává, že se historické mapy
+                        nenačtou.</p>
+                    </div>
+                    <div class="thumb-img thumb-vojII"></div>
+                    <span>1836-1852</span>
+                  </div>
+                </label>
+                <!-- voj. III -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="vojIII">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-clock-counter-clockwise"></i>&nbsp;Mapa III. Vojenského
+                        mapování</strong>
+                      <p>Během let 1874-1880 bylo zmapováno Rakousko-Uhersko v měřítku 1:25 000.</p>
+                      <p>Je potřeba se více oddálit, aby se mapa načetla. Někdy se stává, že se historické mapy
+                        nenačtou.</p>
+                    </div>
+                    <div class="thumb-img thumb-vojIII"></div>
+                    <span>1874-1880</span>
+                  </div>
+                </label>
+              </div>
+
+              <!-- ---- 3D MAPY ---- -->
+              <h3 class="layer-group-header" id="group-3d">
+                <span><i class="ph-fill ph-cube"></i> 3D mapy</span>
+                <i class="ph-bold ph-caret-double-down toggle-icon"></i>
+              </h3>
+              <div class="basemap-thumbnails">
+                <!-- Google 3D -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="cesium_google_3d">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-sphere"></i>&nbsp;3D Google pohled</strong>
+                      <p>Jedná se o 3D pohled z map Google Earth.</p>
+                      <p>Kameru lze naklánět pravým tlačítkem myši nebo klávesou Ctrl.</p>
+                      <p>Načítání mapy může zlobit. Případně změň na jinou mapu a zkus to znovu.</p>
+                    </div>
+                    <div class="thumb-img thumb-cesium-3d"></div>
+                    <span>Google 3D</span>
+                  </div>
+                </label>
+                <!-- Bing 3D -->
+                <label class="basemap-thumb-label">
+                  <input type="radio" name="basemap" value="cesium_bing_3d">
+                  <div class="thumb-card">
+                    
+                    <div class="info-overlay">
+                      <button type="button" class="close-info-btn"><i class="ph-bold ph-x"></i></button>
+                      <strong><i class="ph-bold ph-sphere"></i>&nbsp;3D Bing pohled</strong>
+                      <p>Satelitní 3D zobrazení Bing Maps Aerial s popisky.</p>
+                      <p>Kameru lze naklánět pravým tlačítkem myši nebo klávesou Ctrl.</p>
+                      <p>Načítání mapy může zlobit. Případně změň na jinou mapu a zkus to znovu.</p>
+                    </div>
+                    <div class="thumb-img thumb-bing-3d"></div>
+                    <span>Bing 3D</span>
+                  </div>
+                </label>
+              </div>
+
+    </div>
+</div>
+
+
+          <!-- ── HLEDAT ── -->
+          <div class="tab-panel" id="tab-hledat">
+            <div class="tab-section-title">
+              <i class="ph ph-magnifying-glass"></i> Vyhledávání adres
+            </div>
+            <div class="search-container">
+              <div class="search-field">
+                <input type="text" id="ruian-search-input" placeholder="Hledat adresu, ulici nebo parcelu..."
+                  autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+                <button id="btn-ruian-search" title="Hledat"><i class="ph ph-magnifying-glass"></i></button>
+              </div>
+              <div id="ruian-suggestions" class="search-suggestions hidden"></div>
+              <div id="ruian-search-loader" class="search-loader hidden">
+                <div class="loader-spinner"></div>
+                <span>Vyhledávám...</span>
+              </div>
+              <div id="ruian-search-results" class="search-results">
+                <div class="search-results-empty">Zadejte hledaný výraz (např. Sokolská, Praha nebo parcelní číslo).
+                </div>
+              </div>
+              <div id="ruian-detail" class="hidden">
+                <div class="detail-header">
+                  <button id="btn-ruian-back" class="tab-action-btn tab-action-btn--icon">
+                    <i class="ph ph-arrow-left"></i> Zpět na výsledky
+                  </button>
+                </div>
+                <div id="ruian-detail-content"></div>
+              </div>
+            </div>
+          </div><!-- /tab-hledat -->
+
+          <!-- ── POZEMEK ── -->
+          <div class="tab-panel" id="tab-pozemek">
+            <div class="tab-section-title">
+              <i class="ph-bold ph-layout"></i> Pozemek
+            </div>
+            <div id="pozemek-detail-container">
+              <div class="parcel-empty-state">
+                <i class="ph-bold ph-layout parcel-empty-icon"></i>
+                <p>Pro zobrazení informací o pozemku klikni na tlačítko
+                  <i class="ph-bold ph-layout" style="color: var(--accent); font-size: 14px; vertical-align: middle;"></i>
+                  v pravé části mapy.
+                </p>
+              </div>
+            </div>
+          </div><!-- /tab-pozemek -->
+
+          <!-- ── TISK ── -->
+          <div class="tab-panel" id="tab-tisk">
+            <div class="tab-section-title">
+              <i class="ph ph-printer"></i> Tisk mapy
+            </div>
+            <div class="print-form">
+              <div class="print-field">
+                <label for="print-title">Nadpis mapy</label>
+                <input type="text" id="print-title" placeholder="Pavlínka – tisk mapy">
+              </div>
+              <div class="print-field">
+                <label for="print-size">Formát papíru</label>
+                <select id="print-size">
+                  <option value="A4">A4</option>
+                  <option value="A3">A3</option>
+                </select>
+              </div>
+              <div class="print-field">
+                <label>Orientace</label>
+                <div class="print-radio-group">
+                  <label class="print-radio-label">
+                    <input type="radio" name="print-orient" value="portrait" checked> Na výšku
+                  </label>
+                  <label class="print-radio-label">
+                    <input type="radio" name="print-orient" value="landscape"> Na šířku
+                  </label>
+                </div>
+              </div>
+              <div class="print-field print-field-check">
+                <label class="print-check-label">
+                  <input type="checkbox" id="print-legend" checked>
+                  Zahrnout legendu
+                </label>
+              </div>
+              <div class="print-field print-field-check">
+                <label class="print-check-label">
+                  <input type="checkbox" id="print-coords" checked>
+                  Zahrnout souřadnice
+                </label>
+              </div>
+
+              <!-- Miniatura náhledu (rozbalovací) -->
+              <div class="print-field print-miniature-container">
+                <button type="button" id="btn-toggle-print-preview">
+                  <span class="toggle-print-label-group"><i class="ph-fill ph-image" id="toggle-print-img-icon"></i>
+                    <span id="toggle-print-text">Zobrazit náhled rozložení</span></span>
+                  <i class="ph-bold ph-caret-down toggle-icon" id="toggle-print-icon"></i>
+                </button>
+                <div id="print-miniature-wrapper">
+                  <div id="print-miniature-paper">
+                    <div id="print-miniature-map"></div>
+                    <div id="mini-title">
+                    </div>
+                    <div id="mini-coords">
+                    </div>
+                    <div id="mini-legend">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button id="btn-print" class="tab-action-btn tab-action-btn--confirm">
+                <i class="ph ph-printer"></i> Tisknout
+              </button>
+            </div>
+          </div><!-- /tab-tisk -->
+
+          <!-- ── NÁSTROJE (Původně Poznámky/Úpravy) ── -->
+          <div class="tab-panel" id="tab-poznamky">
+            <div class="panel-section-header">
+              <h2>Nástroje pro mapu</h2>
+              <p>Měření, kreslení a analýzy</p>
+            </div>
+            <div class="notes-switcher">
+              <button class="notes-switch-btn active" data-notes-mode="measure">
+                <i class="ph ph-ruler"></i> Měření
+              </button>
+              <button class="notes-switch-btn" data-notes-mode="draw">
+                <i class="ph ph-pencil-line"></i> Kreslení
+              </button>
+              <button class="notes-switch-btn" data-notes-mode="profile">
+                <i class="ph ph-chart-line-up"></i> Profil
+              </button>
+              <button class="notes-switch-btn" data-notes-mode="viewshed">
+                <i class="ph-bold ph-map-pin-simple-area"></i> Viditelnost
+              </button>
+              <button class="notes-switch-btn" data-notes-mode="solar">
+                <i class="ph-bold ph-solar-panel"></i> Solární potenciál
+              </button>
+            </div>
+
+            <!-- Měření Section -->
+            <div id="notes-measure-section" class="notes-section active">
+              <div class="draw-tools">
+                <label class="draw-tool-btn">
+                  <input type="radio" name="measure-mode" value="line" checked>
+                  <i class="ph ph-line-segments"></i> Linie
+                </label>
+                <label class="draw-tool-btn">
+                  <input type="radio" name="measure-mode" value="area">
+                  <i class="ph ph-hexagon"></i> Plocha
+                </label>
+              </div>
+
+              <div class="measure-controls">
+                <button id="btn-measure-start" class="tab-action-btn tab-action-btn--confirm">
+                  <i class="ph ph-play"></i> Zahájit měření
+                </button>
+                <button id="btn-measure-clear" class="tab-action-btn tab-action-btn--danger">
+                  <i class="ph ph-trash"></i> Smazat měření
+                </button>
+              </div>
+              <div class="measure-hint">
+                Kliknutím do mapy přidávejte body. Dvojklikem nebo tlačítkem Dokončit ukončíte měření.
+              </div>
+              <div id="measure-status" class="measure-status measure-status--idle">
+                <i class="ph ph-circle-dashed"></i> Připraveno k měření
+              </div>
+              <div id="measure-results" class="measure-results">
+                <div class="measure-results-empty">Zatím žádné výsledky.</div>
+              </div>
+            </div>
+
+            <!-- Kreslení Section -->
+            <div id="notes-draw-section" class="notes-section">
+              <div class="draw-controls">
+                <div class="draw-tools">
+                  <button class="draw-tool-btn" data-draw="Marker" title="Bod"><i class="ph ph-map-pin"></i>
+                    Bod</button>
+                  <button class="draw-tool-btn" data-draw="Line" title="Linie"><i class="ph ph-line-segments"></i>
+                    Linie</button>
+                  <button class="draw-tool-btn" data-draw="Polygon" title="Polygon"><i class="ph ph-hexagon"></i>
+                    Polygon</button>
+                  <button class="draw-tool-btn" data-draw="Rectangle" title="Obdélník/Čtverec"><i
+                      class="ph ph-rectangle"></i> Obdélník</button>
+                </div>
+                <div class="draw-settings">
+                  <div class="form-group">
+                    <label for="draw-note">Poznámka k objektu (volitelné):</label>
+                    <textarea id="draw-note" rows="2" placeholder="Zadejte poznámku..."></textarea>
+                  </div>
+                </div>
+
+                <div class="draw-btn-row">
+                  <button id="btn-draw-cancel" class="tab-action-btn tab-action-btn--danger">
+                    <i class="ph ph-x"></i> Zrušit kreslení
+                  </button>
+                  <button id="btn-draw-clear-all" class="tab-action-btn tab-action-btn--danger">
+                    <i class="ph ph-trash"></i> Smazat vše
+                  </button>
+                </div>
+              </div>
+
+              <div class="draw-hint">
+                Objekty se automaticky ukládají do tohoto prohlížeče. Kliknutím na nakreslený prvek se zobrazí jeho
+                poznámka.
+              </div>
+
+              <div id="draw-list">
+                <!-- Zde se mohou vypisovat uložené kresby -->
+              </div>
+            </div>
+
+            <!-- Profil Section -->
+            <div id="notes-profile-section" class="notes-section">
+              <div class="measure-controls">
+                <button id="btn-elevation-start" class="tab-action-btn tab-action-btn--confirm">
+                  <i class="ph ph-play"></i> Zahájit trasování
+                </button>
+              </div>
+
+              <div class="measure-hint">
+                Kliknutím do mapy nakreslete trasu. Pro ukončení klikněte na poslední bod nebo dvojklikněte.
+              </div>
+
+              <div id="elevation-profile-idle" class="elevation-profile-idle">
+                <!-- Skryto, protože hint nahoře stačí -->
+              </div>
+
+              <div id="elevation-profile-loading" class="elevation-profile-loading">
+                <div class="loader-container-mini elevation-loading-row">
+                  <div class="loader"></div>
+                </div>
+                <p class="elevation-loading-text">Načítám výškopisná data (DMR 5G)...</p>
+              </div>
+
+              <div id="elevation-profile-container" class="elevation-profile-container">
+                <div class="elevation-stats">
+                  <div class="stat-box">
+                    <div class="stat-icon stat-icon--accent"><i class="ph-bold ph-arrows-out-line-horizontal"></i></div>
+                    <div class="stat-content">
+                      <span class="stat-label">Délka</span>
+                      <span class="stat-value" id="elev-stat-distance">-</span>
+                    </div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-icon stat-icon--green"><i class="ph-bold ph-trend-up"></i></div>
+                    <div class="stat-content">
+                      <span class="stat-label">Max. výška</span>
+                      <span class="stat-value" id="elev-stat-max">-</span>
+                    </div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-icon stat-icon--blue"><i class="ph-bold ph-trend-down"></i></div>
+                    <div class="stat-content">
+                      <span class="stat-label">Min. výška</span>
+                      <span class="stat-value" id="elev-stat-min">-</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-container">
+                  <canvas id="elevationChart"></canvas>
+                </div>
+
+                <div class="elevation-btn-row">
+                  <button id="btn-elevation-export" class="tab-action-btn tab-action-btn--confirm">
+                    <i class="ph ph-download-simple"></i> Exportovat graf (PNG)
+                  </button>
+                  <button id="btn-elevation-clear" class="tab-action-btn tab-action-btn--danger">
+                    <i class="ph ph-trash"></i> Smazat profil
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Viditelnost Section -->
+            <div id="notes-viewshed-section" class="notes-section">
+              <p class="section-intro">
+                Kliknutím do mapy zvolíte výchozí bod. Aplikace následně stáhne potřebný výškový model a vypočítá
+                viditelnost (do 5 km).
+              </p>
+
+              <div class="form-group">
+                <label>Výška pozorovatele (metry):</label>
+                <input type="number" id="viewshed-observer-height" value="1.7" step="0.1" min="0">
+              </div>
+
+              <div class="form-group">
+                <label>Plošné překážky (lesy/budovy v m):</label>
+                <input type="number" id="viewshed-obstacle-height" value="1" step="1" min="0"
+                  title="Holý model terénu nezná stromy a budovy. Zadejte např. 15m pro simulaci výhledu přes město/les.">
+                <div class="viewshed-tip">
+                  Tip: Protože data obsahují jen "holou hlínu", zadejte např. 15 m, pokud chcete simulovat, že výhled
+                  blokují stromy nebo paneláky.
+                </div>
+              </div>
+              <button id="btn-viewshed-start" class="tab-action-btn tab-action-btn--confirm">
+                <i class="ph ph-target"></i> Zvolit bod na mapě
+              </button>
+
+              <div id="viewshed-status">
+                <i class="ph ph-spinner ph-spin viewshed-spinner-icon"></i>
+                Vypočítávám viditelnost (může trvat pár vteřin)...
+              </div>
+
+              <div id="viewshed-result">
+                <div class="viewshed-result-title">
+                  <i class="ph ph-chart-bar"></i> Výsledky analýzy
+                </div>
+                <div class="viewshed-result-values">
+                  <strong>Souřadnice:</strong> <span id="viewshed-coords-val"></span><br>
+                  <strong>Výška terénu:</strong> <span id="viewshed-elevation-val">0</span> m n. m.<br>
+                  <strong>Rozloha viditelné plochy:</strong> <span id="viewshed-area-val">0</span> ha
+                </div>
+              </div>
+
+              <button id="btn-clear-viewshed" class="tab-action-btn tab-action-btn--danger tab-action-btn--icon">
+                <i class="ph ph-trash"></i> Smazat analýzu
+              </button>
+            </div>
+
+            <!-- Solární potenciál Section -->
+            <div id="notes-solar-section" class="notes-section">
+              <p class="section-intro">
+                Kliknutím do mapy na střechu budovy získáte odhad fotovoltaického potenciálu a roční výroby energie
+                (zdroj EU PVGIS).
+              </p>
+
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="margin-bottom: 8px; display: block;">Způsob zadání plochy:</label>
+                <div class="draw-tools">
+                  <label class="draw-tool-btn">
+                    <input type="radio" name="solar-mode" value="point" checked> <i class="ph ph-target"></i> Bod v mapě
+                  </label>
+                  <label class="draw-tool-btn">
+                    <input type="radio" name="solar-mode" value="polygon"> <i class="ph ph-vector-two"></i> Nakreslit
+                    plochu
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label id="solar-area-label">Plocha střechy (m²):</label>
+                <div class="range-slider-container">
+                  <input type="range" id="solar-area" min="10" max="200" step="5" value="30" class="range-slider">
+                  <span id="solar-area-val" class="range-val">30 m²</span>
+                </div>
+                <div class="viewshed-tip" style="margin-top: 4px;">
+                  Odpovídá zhruba <span id="solar-kwp-val">5.5</span> kWp instalovaného výkonu.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Sklon střechy (°):</label>
+                <div class="range-slider-container">
+                  <input type="range" id="solar-slope" min="0" max="90" step="1" value="35" class="range-slider">
+                  <span id="solar-slope-val" class="range-val">35°</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Orientace (Azimut):</label>
+                <select id="solar-azimuth" class="settings-select">
+                  <option value="0" selected>Jih (0°)</option>
+                  <option value="45">Jihozápad (45°)</option>
+                  <option value="90">Západ (90°)</option>
+                  <option value="135">Severozápad (135°)</option>
+                  <option value="-45">Jihovýchod (-45°)</option>
+                  <option value="-90">Východ (-90°)</option>
+                  <option value="-135">Severovýchod (-135°)</option>
+                  <option value="180">Sever (180°)</option>
+                </select>
+              </div>
+
+              <button id="btn-solar-start" class="tab-action-btn tab-action-btn--confirm">
+                <i class="ph ph-target"></i> Zvolit místo na mapě
+              </button>
+
+              <div id="solar-status">
+                <i class="ph ph-spinner ph-spin"></i> Získávám data z EU PVGIS...
+              </div>
+
+              <div id="solar-result">
+                <div class="viewshed-result-title">
+                  <i class="ph ph-sun"></i> Roční potenciál
+                </div>
+                <div class="viewshed-result-values">
+                  <strong>Roční výroba:</strong> <span id="solar-annual-val">0</span> kWh<br>
+                  <strong>Max. výkon:</strong> <span id="solar-power-val">0</span> kWp<br>
+                  <strong>Úspora (při 6 Kč/kWh):</strong> <span id="solar-saving-val">0</span> Kč / rok
+                </div>
+                <div class="chart-container solar-chart-container">
+                  <canvas id="solarChart"></canvas>
+                </div>
+              </div>
+
+              <button id="btn-clear-solar" class="tab-action-btn tab-action-btn--danger tab-action-btn--icon">
+                <i class="ph ph-trash"></i> Smazat analýzu
+              </button>
+            </div>
+
+          </div><!-- /tab-poznamky -->
+
+          <!-- ── DATA ── -->
+          <div class="tab-panel" id="tab-data">
+            <div class="tab-section-title">
+              <i class="ph ph-database"></i> Data a informace
+            </div>
+
+            <!-- Kontejner pro Místní data (QGIS) -->
+            <div id="data-qgis-container">
+              <div class="data-qgis-header">
+                <div class="data-section-label">
+                  <i class="ph ph-layers"></i> Místní data
+                </div>
+                <button id="btn-refresh-objects" title="Obnovit seznam">
+                  <i class="ph ph-arrows-clockwise"></i> Obnovit
+                </button>
+              </div>
+              <div id="objects-list">
+                <div class="objects-empty">
+                  <i class="ph ph-layers"></i>
+                  <p>Zapni nějakou vrstvu na kartě Vrstvy pro zobrazení objektů.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Trvale zobrazený přepínač cíle dotazování pro Katastr/DTM -->
+            <div id="data-query-selector">
+              <div class="data-section-label">
+                <i class="ph ph-question"></i> Zjistit informace z mapy:
+              </div>
+              <div class="notes-switcher">
+                <label class="notes-switch-btn">
+                  <input type="radio" name="data-query-target" value="kn" checked> <i class="ph ph-map-trifold"></i>
+                  Parcely KN
+                </label>
+                <label class="notes-switch-btn">
+                  <input type="radio" name="data-query-target" value="dtm"> <i class="ph ph-lightning"></i> Sítě DTM
+                </label>
+                <label class="notes-switch-btn">
+                  <input type="radio" name="data-query-target" value="dopravni-info"> <i class="ph ph-car"></i> Doprava
+                </label>
+              </div>
+            </div>
+
+            <!-- Kontejner pro Katastr a DTM -->
+            <div id="katastr-container" class="katastr-container">
+              <div id="katastr-status" class="katastr-status">
+                <i class="ph ph-info"></i> Pro zobrazení informací klikněte na mapu.
+              </div>
+              <div id="katastr-loader" class="katastr-loader hidden">
+                <div class="loader-spinner"></div>
+                <span>Vyhledávám...</span>
+              </div>
+              <div id="katastr-result" class="katastr-result hidden">
+                <div class="detail-title-row">
+                  <i id="katastr-geom-icon" class="ph ph-line-segment"></i>
+                  <h2 class="detail-name" id="katastr-parcel-title">Parcela
+                    —</h2>
+                </div>
+
+                <!-- Tlačítko pro zrušení zvýraznění -->
+                <button id="btn-katastr-clear-highlight"
+                  class="tab-action-btn tab-action-btn--danger tab-action-btn--icon">
+                  <i class="ph ph-x"></i> Zrušit zvýraznění
+                </button>
+
+                <!-- Selektor prvků (více objektů v místě kliknutí) -->
+                <div id="katastr-dtm-selector">
+                  <div class="dtm-selector-label">
+                    <i class="ph ph-stack"></i> Nalezené objekty
+                  </div>
+                  <div id="katastr-dtm-selector-list">
+                    <!-- dynamicky generováno -->
+                  </div>
+                </div>
+
+                <div class="detail-attrs" id="katastr-attrs-content">
+                  <!-- Zde se dynamicky vygenerují veškeré dostupné informace -->
+                </div>
+
+                <div class="katastr-link-wrapper">
+                  <a id="katastr-link" href="#" target="_blank" class="tab-action-btn">
+                    <i class="ph ph-arrow-square-out"></i> Otevřít "Nahlížení v Katastru Nemovitostí"
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div><!-- /tab-data -->
+        </div><!-- /tabs-area -->
+
+        <!-- ===== DETAIL OBJEKTU (read-only) ===== -->
+        <div id="detail-view">
+          <div class="detail-header">
+            <button id="close-detail-btn" class="tab-action-btn tab-action-btn--icon">
+              <i class="ph ph-arrow-left"></i> Zpět
+            </button>
+            <button id="open-edit-btn" class="tab-action-btn tab-action-btn--icon tab-action-btn--edit">
+              <i class="ph ph-pencil-simple"></i> Upravit
+            </button>
+          </div>
+          <div class="detail-title-row">
+            <i id="detail-icon" class="ph ph-circle"></i>
+            <h2 id="detail-name" class="detail-name">—</h2>
+          </div>
+          <div id="detail-attrs" class="detail-attrs"></div>
+        </div>
+
+        <div id="edit-form">
+          <div class="detail-header">
+            <button id="close-form-btn" class="tab-action-btn tab-action-btn--icon">
+              <i class="ph ph-arrow-left"></i> Zpět
+            </button>
+            <span class="edit-form-title">Úprava objektu</span>
+          </div>
+          <form id="feature-form">
+            <div class="form-group">
+              <label>ID:</label>
+              <input type="text" id="obj-id" readonly disabled>
+            </div>
+            <div class="form-group">
+              <label>Název objektu:</label>
+              <input type="text" id="obj-name">
+            </div>
+            <div class="form-group" id="group-obj-floor-type">
+              <label>Typ (Půdorysy):</label>
+              <select id="obj-floor-type">
+                <option value="">-- vybrat typ --</option>
+                <option value="chodba">chodba/předsíň</option>
+                <option value="schodiste">schodiště</option>
+                <option value="toaleta">toaleta</option>
+                <option value="koupelna">koupelna</option>
+                <option value="pokoj">pokoj</option>
+                <option value="loznice">ložnice</option>
+                <option value="obyvak">obývák</option>
+                <option value="kuchyn">kuchyň</option>
+                <option value="jidelna">jídelna</option>
+                <option value="kotelna">kotelna</option>
+                <option value="pradelna">prádelna</option>
+                <option value="dilna">dílna</option>
+                <option value="garaz">garáž</option>
+                <option value="naradovna">nářaďovna</option>
+                <option value="puda">půda</option>
+                <option value="ostatni">ostatní</option>
+              </select>
+            </div>
+            <div class="form-group" id="group-obj-type-generic">
+              <label>Typ (Původní z QGIS):</label>
+              <input type="text" id="obj-type">
+            </div>
+            <div class="form-group" id="group-obj-camera-type">
+              <label>Typ (Kamery):</label>
+              <select id="obj-camera-type">
+                <option value="">-- výchozí (černá) --</option>
+                <option value="1">1 (tyrkysová)</option>
+                <option value="2">2 (oranžová)</option>
+                <option value="3">3 (fialová)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Poznámka:</label>
+              <textarea id="obj-note" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Fotografie:</label>
+              <input type="file" id="obj-photo" accept="image/*">
+              <div id="edit-photo-preview-container">
+                <img id="edit-photo-preview" src="">
+                <button type="button" id="btn-delete-photo"
+                  class="tab-action-btn tab-action-btn--danger tab-action-btn--icon">
+                  <i class="ph ph-trash"></i> Odstranit fotku
+                </button>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="tab-action-btn tab-action-btn--confirm"><i class="ph ph-floppy-disk"></i>
+                Uložit</button>
+              <button type="button" id="delete-btn" class="tab-action-btn tab-action-btn--danger"><i
+                  class="ph ph-trash"></i> Smazat</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel-footer">
+          <div class="footer-left">
+            <div class="copyright">© J.Š., <span id="current-year"></span></div>
+          </div>
+          <div class="footer-right">
+            <button type="button" class="footer-info-btn" title="Domů – Zauliční 298/1, Ostrava" onclick="flyToHome()">
+              <i class="ph-bold ph-house-line"></i> Domů
+            </button>
+            <a href="info.html" class="footer-info-btn" title="Informace o aplikaci">
+              <i class="ph-bold ph-info"></i> Info
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== STREET VIEW PANEL ===== -->
+      <div id="streetview-panel">
+        <div class="streetview-header">
+          <div class="streetview-title">
+            <i class="ph-bold ph-panorama"></i>
+            <h2>Google Street View</h2>
+          </div>
+          <div class="streetview-actions">
+            <a id="btn-streetview-google-maps" class="btn-google-maps" href="#" target="_blank"
+              title="Otevřít v Google Mapách">
+              <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M21.805 10.023H12.24v3.955h5.47c-.236 1.266-.953 2.34-2.03 3.059l3.28 2.547c1.914-1.766 3.018-4.36 3.018-7.436 0-.716-.064-1.406-.172-2.125z"
+                  fill="#4285F4" />
+                <path
+                  d="M12.24 22c2.727 0 5.012-.903 6.68-2.416l-3.28-2.547c-.906.609-2.067.969-3.4.969-2.615 0-4.832-1.766-5.624-4.14L3.29 16.388C4.949 19.694 8.348 22 12.24 22z"
+                  fill="#34A853" />
+                <path
+                  d="M6.616 13.866A6.025 6.025 0 0 1 6.3 12c0-.647.11-1.275.316-1.866L3.29 7.612A9.98 9.98 0 0 0 2.24 12c0 1.61.386 3.133 1.05 4.388l3.326-2.522z"
+                  fill="#FBBC05" />
+                <path
+                  d="M12.24 5.895c1.474 0 2.795.507 3.836 1.5l2.87-2.87C17.247 2.903 14.961 2 12.24 2 8.348 2 4.949 4.306 3.29 7.612l3.326 2.522c.792-2.374 3.009-4.24 5.624-4.24z"
+                  fill="#EA4335" />
+              </svg>
+              <span>Google Mapy</span>
+            </a>
+            <a id="btn-streetview-mapy-cz" class="btn-mapy-cz" href="#" target="_blank"
+              title="Otevřít Panorama v Mapy.cz">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff">
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+              </svg>
+              <span>Mapy.cz</span>
+            </a>
+            <button id="btn-streetview-close" class="btn-streetview-close-danger" title="Zavřít">
+              <i class="ph ph-x"></i> Zavřít
+            </button>
+          </div>
+        </div>
+        <div class="streetview-container">
+          <iframe id="streetview-iframe" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- JS KNIHOVNY - PROJ4 NAVRÁCEN PRO KATASTR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Esri Leaflet (Pro ArcGIS MapServery MSK) -->
+  <script src="https://unpkg.com/esri-leaflet@3.0.12/dist/esri-leaflet.js"></script>
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.js"></script>
+  <script src="js/lib/SmoothWheelZoom.js"></script>
+  <script src="js/legend-config.js?v=6"></script>
+  <!-- NonTiledLayer pro překryv historického snímku -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.nontiledlayer/dist/NonTiledLayer.js"></script>
+  <!-- Modularizované JS scripty -->
+  <script src="js/config.js?v=6"></script>
+  <script src="js/map.js?v=16"></script>
+  <script src="js/status.js"></script>
+  <script src="js/layers.js?v=6"></script>
+  <script src="js/ui.js?v=6"></script>
+  <script src="js/tools.js?v=6"></script>
+  <script src="js/search.js?v=6"></script>
+  <script src="js/katastr.js?v=6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/elevationProfile.js?v=6"></script>
+  <script src="js/viewshed.js?v=6"></script>
+  <script src="js/solar.js?v=6"></script>
+  <script src="js/boxy.js?v=6"></script>
+  <script src="js/parcel.js?v=1"></script>
+  <!-- Floorplan Modal -->
+  <div id="floorplan-modal-overlay" class="floorplan-modal-overlay hidden">
+    <div class="floorplan-modal">
+      <div class="floorplan-header">
+        <div class="floorplan-title">
+          <i class="ph-bold ph-blueprint"></i> Půdorys
+        </div>
+        
+        <div class="floorplan-tabs" id="floorplan-tabs">
+          <button class="draw-tool-btn active" data-floor="sklep">Sklep</button>
+          <button class="draw-tool-btn" data-floor="1np">1.NP</button>
+          <button class="draw-tool-btn" data-floor="2np">2.NP</button>
+          <button class="draw-tool-btn" data-floor="střecha">Půda/střecha</button>
+          <button class="draw-tool-btn" data-floor="garáž">Garáž</button>
+          <button class="draw-tool-btn" data-floor="puda_garaz">Půda garáž</button>
+          <button class="draw-tool-btn" data-floor="altán">Altán</button>
+        </div>
+
+        <div class="floorplan-actions">
+          <button id="btn-save-floorplan" class="tab-action-btn tab-action-btn--confirm tab-action-btn--icon">
+            <i class="ph ph-floppy-disk"></i> Uložit
+          </button>
+          <button id="btn-close-floorplan" class="tab-action-btn tab-action-btn--danger tab-action-btn--icon">
+            <i class="ph ph-x"></i> Zavřít
+          </button>
+        </div>
+      </div>
+      
+      <div id="excalidraw-container" class="floorplan-canvas-container">
+        <!-- Excalidraw bude vložen sem -->
+        <div class="loader-container-mini" id="floorplan-loader">
+          <div class="loader"></div>
+          <p>Načítám nástroj pro kreslení...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/init.js?v=6"></script>
+  <script type="module" src="js/floorplan.js"></script>
+</body>
+
+</html>

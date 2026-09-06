@@ -1,0 +1,76 @@
+/* ============================================================
+   routing.css – Styly pro nástroj Vyhledat trasu
+   Vlastní jen stat-boxy výsledků a tooltip trasy v mapě.
+   Vše ostatní (search-field, tab-action-btn…) je z style.css.
+   ============================================================ */
+
+/* --- Výsledkové stat-boxy (dle design guide sekce 4.2) --- */
+.route-results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.route-stat-box {
+    background: #fcfcfc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    padding: 9px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.route-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.route-stat-label i {
+    color: var(--accent);
+}
+
+.route-stat-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: #222;
+    line-height: 1.2;
+}
+
+.route-stat-unit {
+    font-size: 10px;
+    font-weight: 400;
+    color: #888;
+}
+
+/* --- Popisek trasy v mapě (Leaflet tooltip, permanent) --- */
+.leaflet-tooltip.route-line-tooltip {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-family: Roboto, sans-serif;
+    color: #333;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.leaflet-tooltip.route-line-tooltip strong {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Schovej výchozí šipku Leaflet tooltipu */
+.leaflet-tooltip.route-line-tooltip::before {
+    display: none;
+}
+
