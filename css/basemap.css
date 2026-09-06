@@ -162,7 +162,7 @@
 
 /* Placeholder vzory */
 .thumb-osm {
-    background-image: url('./img/osm.jpeg');
+    background-image: url('../img/osm.jpeg');
 }
 
 .thumb-carto {
@@ -170,86 +170,86 @@
 }
 
 .thumb-cuzk {
-    background-image: url('./img/cuzk_orto.png');
+    background-image: url('../img/cuzk_orto.png');
 }
 
 .thumb-msk {
-    background-image: url('./img/msk_orto.png');
+    background-image: url('../img/msk_orto.png');
 }
 
 .thumb-orto50 {
-    background-image: url('./img/orto50.png');
+    background-image: url('../img/orto50.png');
 }
 
 .thumb-google-sat {
-    background-image: url('./img/google_sat.png');
+    background-image: url('../img/google_sat.png');
 }
 
 .thumb-vojI {
-    background-image: url('./img/vojI.png');
+    background-image: url('../img/vojI.png');
 }
 
 .thumb-vojII {
-    background-image: url('./img/vojII.png');
+    background-image: url('../img/vojII.png');
 }
 
 .thumb-vojIII {
-    background-image: url('./img/vojIII.png');
+    background-image: url('../img/vojIII.png');
 }
 
 .thumb-mullerM {
-    background-image: url('./img/mullerM.png');
+    background-image: url('../img/mullerM.png');
 }
 
 .thumb-msk-cisar {
-    background-image: url('./img/cisar.png');
+    background-image: url('../img/cisar.png');
 }
 
 .thumb-msk-up {
-    background-image: url('./img/up.png');
+    background-image: url('../img/up.png');
 }
 
 .thumb-orto-archiv {
-    background-image: url('./img/orto_archiv.png');
+    background-image: url('../img/orto_archiv.png');
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .thumb-cuzk-prehledova {
-    background-image: url('./img/cuzk_prehledova.png');
+    background-image: url('../img/cuzk_prehledova.png');
 }
 
 .thumb-cuzk-topograficka {
-    background-image: url('./img/cuzk_topograficka.png');
+    background-image: url('../img/cuzk_topograficka.png');
 }
 
 .thumb-dmp {
-    background-image: url('./img/dmp.png');
+    background-image: url('../img/dmp.png');
 }
 
 .thumb-slope {
-    background-image: url('./img/slope.png');
+    background-image: url('../img/slope.png');
 }
 
 .thumb-aspect {
-    background-image: url('./img/aspect.png');
+    background-image: url('../img/aspect.png');
 }
 
 .thumb-msk-1955 {
-    background-image: url('./img/1955.jpeg');
+    background-image: url('../img/1955.jpeg');
 }
 
 .thumb-parcelni {
-    background-image: url('./img/parcelni.jpeg');
+    background-image: url('../img/parcelni.jpeg');
 }
 
 .thumb-cesium-3d {
-    background-image: url('./img/cesium_3d.png');
+    background-image: url('../img/cesium_3d.png');
 }
 
 .thumb-bing-3d {
-    background-image: url('./img/bing_3d.png');
+    background-image: url('../img/bing_3d.png');
 }
 
 /* Časová osa archivních map */
